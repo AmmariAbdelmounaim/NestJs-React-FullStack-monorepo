@@ -2,7 +2,11 @@
   "name": "@library-platform/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "dev:api": "nx serve api",
+    "dev:client": "nx serve client",
+    "dev": "nx run-many --target=serve --projects=api,client --parallel=2"
+  },
   "private": true,
   "devDependencies": {
     "@eslint/js": "^9.8.0",
