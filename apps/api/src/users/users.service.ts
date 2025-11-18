@@ -2,7 +2,6 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
-  Logger,
 } from '@nestjs/common';
 import { mapDto } from '../utils/map-dto';
 import * as bcrypt from 'bcrypt';
@@ -13,10 +12,7 @@ import { WithErrorHandling } from '../utils/with-error-handling.decorator';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    private readonly logger: Logger,
-    private readonly usersRepository: UsersRepository,
-  ) {}
+  constructor(private readonly usersRepository: UsersRepository) {}
 
   @WithErrorHandling('UsersService', 'create')
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {

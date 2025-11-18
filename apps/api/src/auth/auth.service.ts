@@ -1,7 +1,6 @@
 import {
   Injectable,
   UnauthorizedException,
-  Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -18,7 +17,6 @@ import { MembershipCardsRepository } from '../membership-cards/membership-cards.
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly logger: Logger,
     private usersService: UsersService,
     private usersRepository: UsersRepository,
     private membershipCardsService: MembershipCardsService,
