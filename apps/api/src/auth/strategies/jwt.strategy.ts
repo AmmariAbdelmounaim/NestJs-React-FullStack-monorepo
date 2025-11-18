@@ -3,11 +3,12 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
+import { UserRole } from '../../db';
 
 export interface JwtPayload {
   sub: string; // JWT payloads are JSON, so bigint must be string
   email: string;
-  role: 'ADMIN' | 'USER';
+  role: UserRole;
 }
 
 @Injectable()

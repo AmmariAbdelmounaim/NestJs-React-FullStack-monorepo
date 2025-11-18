@@ -9,7 +9,7 @@ import {
   MaxLength,
   IsEnum,
 } from 'class-validator';
-import { UserRow } from '../db';
+import { UserRow, USER_ROLES } from '../db';
 
 // Base class for all user DTOs
 // This class contains all user fields and is used to create other DTOs via PickType/OmitType/PartialType
@@ -70,9 +70,9 @@ export class UserBaseDto {
   @ApiProperty({
     description: 'User role',
     example: 'USER',
-    enum: ['ADMIN', 'USER'],
+    enum: USER_ROLES,
   })
-  @IsEnum(['ADMIN', 'USER'])
+  @IsEnum(USER_ROLES)
   role: UserRow['role'];
 
   @Expose()

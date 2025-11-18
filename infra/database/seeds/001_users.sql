@@ -3,14 +3,12 @@
 -- Seed initial user data
 -- ===============================================
 
--- Insert admin user
-INSERT INTO users(email, first_name, last_name, role, password)
-VALUES ('admin@library.com', 'Admin', 'User', 'ADMIN', 'password')
-ON CONFLICT (email) DO NOTHING;
+-- Note: Admin user is now initialized by the NestJS application on startup
+-- See apps/api/src/startup/startup.service.ts
 
 -- Log seed completion
 DO $$
 BEGIN
-    RAISE NOTICE '✓ Users seeded successfully';
+    RAISE NOTICE '✓ Users seed file loaded (admin initialization handled by application)';
 END $$;
 

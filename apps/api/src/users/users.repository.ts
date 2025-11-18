@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { users, createDatabase, UserRow, UserInsert } from '../db';
+import { users, createDatabase, UserRow, UserInsert, DEFAULT_USER_ROLE } from '../db';
 
 type Database = ReturnType<typeof createDatabase>;
 
@@ -74,7 +74,7 @@ export class UsersRepository {
         firstName: data.firstName,
         lastName: data.lastName,
         password: data.password,
-        role: data.role || 'USER',
+        role: data.role || DEFAULT_USER_ROLE,
       })
       .returning();
     return newUser;

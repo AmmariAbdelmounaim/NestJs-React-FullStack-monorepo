@@ -8,7 +8,7 @@ import { mapDto } from '../utils/map-dto';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto, UpdateUserDto, UserResponseDto } from './users.dto';
 import { UsersRepository } from './users.repository';
-import { UserInsert } from '../db';
+import { UserInsert, DEFAULT_USER_ROLE } from '../db';
 import { WithErrorHandling } from '../utils/with-error-handling.decorator';
 
 @Injectable()
@@ -38,7 +38,7 @@ export class UsersService {
       firstName: createUserDto.firstName,
       lastName: createUserDto.lastName,
       password: hashedPassword,
-      role: 'USER',
+      role: DEFAULT_USER_ROLE,
     });
     return mapDto(UserResponseDto, {
       ...newUser,

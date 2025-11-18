@@ -50,3 +50,19 @@ export function createDatabase(configService: ConfigService) {
 
 // Export schema for use in queries
 export * from './migrations/schema';
+
+// Export inferred types for convenience
+import { UserRow } from './migrations/schema';
+
+// Infer UserRole type from the schema
+export type UserRole = UserRow['role'];
+
+// Export enum values as const array for runtime use (e.g., validation)
+// The enum values are defined in the schema: ['ADMIN', 'USER']
+export const USER_ROLES = [
+  'ADMIN',
+  'USER',
+] as const satisfies readonly UserRole[];
+
+// Default role value (matches schema default)
+export const DEFAULT_USER_ROLE: UserRole = 'USER';
