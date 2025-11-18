@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { MembershipCardsRepository } from './membership-cards.repository';
 import { WithErrorHandling } from '../utils/with-error-handling.decorator';
 import { MembershipCardBaseDto } from './membership-cards.dto';
@@ -7,7 +7,6 @@ import { mapDto } from '../utils/map-dto';
 @Injectable()
 export class MembershipCardsService {
   constructor(
-    private readonly logger: Logger,
     private readonly membershipCardsRepository: MembershipCardsRepository,
   ) {}
 
