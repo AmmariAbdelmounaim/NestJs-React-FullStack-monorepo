@@ -4,10 +4,10 @@ import {
   ExecutionContext,
   ForbiddenException,
 } from '@nestjs/common';
-import { UserResponseDto } from '../../users/users.dto';
+import { UserRow } from '../../db';
 
 interface AuthenticatedRequest {
-  user: UserResponseDto;
+  user: UserRow;
   params: { id: string };
 }
 
@@ -15,7 +15,7 @@ interface AuthenticatedRequest {
 export class SelfGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const user: UserResponseDto = request.user;
+    const user: UserRow = request.user;
     const requestedUserId = parseInt(request.params.id, 10);
 
     if (!user) {
@@ -23,7 +23,8 @@ export class SelfGuard implements CanActivate {
     }
 
     // Check if user is accessing their own data
-    if (user.id !== requestedUserId) {
+    // Convert BigInt to number for comparison
+    if (Number(user.id) !== requestedUserId) {
       throw new ForbiddenException('You can only access your own data');
     }
 

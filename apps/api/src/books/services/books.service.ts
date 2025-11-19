@@ -9,6 +9,7 @@ import {
   CreateBookDto,
   UpdateBookDto,
   BookResponseDto,
+  BookWithAuthorsDto,
   SearchBooksDto,
   SearchSimpleBooksDto,
   SearchGoogleBooksDto,
@@ -16,6 +17,7 @@ import {
 import { BookInsert } from '../../db';
 import { BooksRepository } from '../books.repository';
 import { GoogleBooksService } from './google-books.service';
+import { AuthorsRepository } from '../../authors/authors.repository';
 import { WithErrorHandling } from '../../utils/with-error-handling.decorator';
 import { google, type books_v1 } from 'googleapis';
 
@@ -26,6 +28,7 @@ export class BooksService {
   constructor(
     private readonly booksRepository: BooksRepository,
     private readonly googleBooksService: GoogleBooksService,
+    private readonly authorsRepository: AuthorsRepository,
   ) {}
 
   @WithErrorHandling('BooksService', 'create')
@@ -61,17 +64,32 @@ export class BooksService {
   }
 
   @WithErrorHandling('BooksService', 'findOne')
-  async findOne(id: number): Promise<BookResponseDto> {
+  async findOne(id: number): Promise<BookWithAuthorsDto> {
     const book = await this.booksRepository.findById(id);
 
     if (!book) {
       throw new NotFoundException(`Book with the id ${id} is not found`);
     }
 
-    return mapDto(BookResponseDto, {
+    // Get authors who wrote this book
+    const authors = await this.authorsRepository.findByBookId(id);
+
+    const bookResponse = mapDto(BookResponseDto, {
       ...book,
       id: Number(book.id), // Convert BigInt to number
     });
+
+    // Convert authors to plain objects (not DTOs yet) so @Type() can transform them
+    const authorsPlain = authors.map((author) => ({
+      ...author,
+      id: Number(author.id), // Convert BigInt to number
+    }));
+
+    const bookWithAuthors = mapDto(BookWithAuthorsDto, {
+      ...bookResponse,
+      authors: authorsPlain,
+    });
+    return bookWithAuthors;
   }
 
   @WithErrorHandling('BooksService', 'update')

@@ -1,5 +1,5 @@
 import { ApiProperty, PartialType, PickType } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import {
   IsInt,
   IsNotEmpty,
@@ -15,6 +15,7 @@ import {
   Max,
 } from 'class-validator';
 import { BookRow } from '../db';
+import { AuthorResponseDto } from '../authors/authors.dto';
 
 // Base class for all book DTOs
 export class BookBaseDto {
@@ -175,6 +176,16 @@ export class BookBaseDto {
 }
 
 export class BookResponseDto extends BookBaseDto {}
+
+export class BookWithAuthorsDto extends BookResponseDto {
+  @Expose()
+  @Type(() => AuthorResponseDto)
+  @ApiProperty({
+    description: 'Authors who wrote this book',
+    type: [AuthorResponseDto],
+  })
+  authors: AuthorResponseDto[];
+}
 
 export class CreateBookDto extends PickType(BookBaseDto, [
   'title',

@@ -4,11 +4,10 @@ import {
   ExecutionContext,
   ForbiddenException,
 } from '@nestjs/common';
-import { UserResponseDto } from '../../users/users.dto';
-import { UserRole, USER_ROLES } from '../../db';
+import { UserRole, USER_ROLES, UserRow } from '../../db';
 
 interface AuthenticatedRequest {
-  user: UserResponseDto;
+  user: UserRow;
   params: { id: string };
 }
 
@@ -18,7 +17,7 @@ const ADMIN_ROLE: UserRole = USER_ROLES[0]; // 'ADMIN'
 export class SelfOrAdminGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const user: UserResponseDto = request.user;
+    const user: UserRow = request.user;
     const requestedUserId = parseInt(request.params.id, 10);
 
     if (!user) {
@@ -31,7 +30,8 @@ export class SelfOrAdminGuard implements CanActivate {
     }
 
     // Regular users can only access their own data
-    if (user.id === requestedUserId) {
+    // Convert BigInt to number for comparison
+    if (Number(user.id) === requestedUserId) {
       return true;
     }
 

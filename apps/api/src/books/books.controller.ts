@@ -31,6 +31,7 @@ import {
   CreateBookDto,
   UpdateBookDto,
   BookResponseDto,
+  BookWithAuthorsDto,
   SearchBooksDto,
   SearchSimpleBooksDto,
   SearchGoogleBooksDto,
@@ -250,7 +251,8 @@ export class BooksController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get book by ID',
-    description: 'Get book information by ID. Requires authentication.',
+    description:
+      'Get book information by ID including all authors who wrote this book. Requires authentication.',
   })
   @ApiParam({
     name: 'id',
@@ -260,8 +262,8 @@ export class BooksController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Book found and returned successfully',
-    type: BookResponseDto,
+    description: 'Book found and returned successfully with authors',
+    type: BookWithAuthorsDto,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Invalid or missing JWT token',
@@ -269,7 +271,7 @@ export class BooksController {
   @ApiNotFoundResponse({
     description: 'Book not found',
   })
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<BookResponseDto> {
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<BookWithAuthorsDto> {
     return this.booksService.findOne(id);
   }
 

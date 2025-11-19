@@ -253,6 +253,9 @@ export const authors = pgTable(
   ],
 );
 
+export type AuthorRow = typeof authors.$inferSelect;
+export type AuthorInsert = typeof authors.$inferInsert;
+
 export const users = pgTable(
   'users',
   {

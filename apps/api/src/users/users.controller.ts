@@ -29,9 +29,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { SelfOrAdminGuard } from '../auth/guards/self-or-admin.guard';
+import { mapDto } from '../utils/map-dto';
+import { UserRow } from '../db';
 
 interface AuthenticatedRequest extends Request {
-  user: UserResponseDto;
+  user: UserRow;
 }
 
 @ApiTags('users')
@@ -53,7 +55,11 @@ export class UsersController {
   })
   getCurrentUser(@Request() req: AuthenticatedRequest): UserResponseDto {
     // The user is attached to the request by the JWT strategy
-    return req.user;
+    // Transform the raw UserRow to UserResponseDto, converting BigInt to number
+    return mapDto(UserResponseDto, {
+      ...req.user,
+      id: Number(req.user.id), // Convert BigInt to number
+    });
   }
 
   @Get(':id')

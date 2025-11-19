@@ -6,8 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import { UserResponseDto } from '../../users/users.dto';
-import { UserRole } from '../../db';
+import { UserRole, UserRow } from '../../db';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -24,7 +23,7 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const user: UserResponseDto = request.user;
+    const user: UserRow = request.user;
 
     if (!user) {
       throw new ForbiddenException('User not authenticated');
