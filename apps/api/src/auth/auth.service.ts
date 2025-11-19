@@ -46,7 +46,7 @@ export class AuthService {
     return mapDto(AuthResponseDto, {
       accessToken,
       user: {
-        id: Number(user.id), // Convert BigInt to number
+        id: Number(user.id),
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -74,8 +74,6 @@ export class AuthService {
       assignedAt: new Date().toISOString(),
     });
 
-    // Generate JWT token
-    // Convert bigint to string for JWT payload (JSON doesn't support bigint)
     const payload: JwtPayload = {
       sub: String(user.id),
       email: user.email,
@@ -87,7 +85,7 @@ export class AuthService {
     return mapDto(AuthResponseDto, {
       accessToken,
       user: {
-        id: Number(user.id), // Convert BigInt to number
+        id: Number(user.id),
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,

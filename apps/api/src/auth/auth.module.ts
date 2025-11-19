@@ -1,4 +1,4 @@
-import { Module, Logger } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -29,14 +29,7 @@ import { MembershipCardsModule } from '../membership-cards/membership-cards.modu
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    {
-      provide: Logger,
-      useFactory: () => new Logger(AuthService.name),
-    },
-    AuthService,
-    JwtStrategy,
-  ],
+  providers: [AuthService, JwtStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}

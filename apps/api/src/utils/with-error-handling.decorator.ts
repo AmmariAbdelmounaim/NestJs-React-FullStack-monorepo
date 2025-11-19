@@ -1,4 +1,4 @@
-import { HttpException } from '@nestjs/common';
+import { HttpException, Logger } from '@nestjs/common';
 
 export const WithErrorHandling = (
   serviceName: string,
@@ -6,6 +6,9 @@ export const WithErrorHandling = (
   errorMessage?: string | ((...args: unknown[]) => string),
   onError?: (error: unknown, context: { args: unknown[] }) => Promise<void>,
 ) => {
+  // Create a logger instance for this service
+  const logger = new Logger(serviceName);
+
   return function (
     target: unknown,
     propertyKey: string,
@@ -13,10 +16,7 @@ export const WithErrorHandling = (
   ) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (
-      this: { logger: { error: (msg: string) => void } },
-      ...args: unknown[]
-    ) {
+    descriptor.value = async function (this: unknown, ...args: unknown[]) {
       try {
         return await originalMethod.apply(this, args);
       } catch (error) {
@@ -27,7 +27,7 @@ export const WithErrorHandling = (
               ? errorMessage + ', '
               : ''
         } ${error}`;
-        this.logger.error(msg);
+        logger.error(msg);
         if (onError) {
           await onError.call(this, error, { args });
         }

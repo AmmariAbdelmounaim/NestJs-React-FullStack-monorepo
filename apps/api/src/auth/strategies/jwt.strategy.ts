@@ -2,8 +2,8 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from '../../users/users.service';
 import { UserRole } from '../../db';
+import { UsersRepository } from '../../users/users.repository';
 
 export interface JwtPayload {
   sub: string; // JWT payloads are JSON, so bigint must be string
@@ -15,7 +15,7 @@ export interface JwtPayload {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     configService: ConfigService,
-    private usersService: UsersService,
+    private usersRepository: UsersRepository,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -25,9 +25,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
-    // Convert string ID back to number/bigint for lookup
     const userId = BigInt(payload.sub);
-    const user = await this.usersService.findOne(Number(userId));
+    const user = await this.usersRepository.findById(Number(userId));
     if (!user) {
       throw new UnauthorizedException('User not found');
     }

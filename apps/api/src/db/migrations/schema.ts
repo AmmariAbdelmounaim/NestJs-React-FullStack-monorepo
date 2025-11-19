@@ -92,6 +92,9 @@ export const books = pgTable(
   ],
 );
 
+export type BookRow = typeof books.$inferSelect;
+export type BookInsert = typeof books.$inferInsert;
+
 export const loans = pgTable(
   'loans',
   {
