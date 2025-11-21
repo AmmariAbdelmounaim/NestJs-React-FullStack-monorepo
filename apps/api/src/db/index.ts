@@ -7,7 +7,10 @@ import * as schema from './migrations/schema';
 export function createDatabase(configService: ConfigService) {
   // Get connection string from environment using ConfigService
   // Support both DATABASE_URL and individual POSTGRES_* variables
+  // Using superuser to bypass RLS (Row Level Security) for simplicity
   const databaseUrl = configService.get<string>('DATABASE_URL');
+
+  // Use superuser credentials (bypasses RLS)
   const dbUser =
     configService.get<string>('POSTGRES_USER') ||
     configService.get<string>('DB_USER');

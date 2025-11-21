@@ -30,10 +30,21 @@ export const customInstance = <T>(
     data: options?.body,
   };
 
+  // Use VITE_API_URL if set, otherwise default to localhost for development
+  // Note: Orval generates paths that already include '/api' prefix
+  // So baseURL should be empty string (root) for same-origin, or full URL for different origin
+  const apiUrl = import.meta.env.VITE_API_URL;
+  const baseURL =
+    apiUrl && apiUrl !== ''
+      ? apiUrl
+      : import.meta.env.DEV
+        ? 'http://localhost:3000'
+        : ''; // Empty string for same-origin (Orval paths already include '/api')
+
   const promise = axios({
     ...axiosConfig,
     cancelToken: source.token,
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+    baseURL,
   }).then((response) => {
     // Orval expects a response object with data, status, and headers
     // Convert axios headers to Web API Headers format

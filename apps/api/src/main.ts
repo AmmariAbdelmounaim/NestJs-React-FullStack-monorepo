@@ -5,16 +5,28 @@ import {
 } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
 
-  // Enable CORS for the client application
+  // Get the underlying Express instance for SPA routing
+  const expressApp = app.getHttpAdapter().getInstance();
+
+  // Serve static files from public directory (client build)
+  // __dirname is /app in the container, so public is at /app/public
+  const publicPath = join(__dirname, 'public');
+  const express = require('express');
+  expressApp.use(express.static(publicPath));
+
+  // Enable CORS - in production, same-origin is used, but allow configurable origins
+  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:4200';
   app.enableCors({
-    origin: 'http://localhost:4200',
+    origin: corsOrigin === 'same-origin' ? undefined : corsOrigin,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -69,6 +81,26 @@ async function bootstrap() {
     },
   });
 
+  // Serve index.html for client-side routing (SPA fallback)
+  // This must be after all other routes are registered
+  // Use a middleware that runs after static assets but handles SPA routing
+  expressApp.use((req, res, next) => {
+    // Skip API routes
+    if (req.originalUrl.startsWith(`/${globalPrefix}`)) {
+      return next();
+    }
+    // Skip requests for files (they should be handled by static middleware)
+    if (req.originalUrl.includes('.') && !req.originalUrl.endsWith('/')) {
+      return next();
+    }
+    // For all other routes, serve index.html (SPA routing)
+    res.sendFile(join(publicPath, 'index.html'), (err) => {
+      if (err) {
+        next(err);
+      }
+    });
+  });
+
   const port = process.env.PORT || 3000;
   await app.listen(port);
   Logger.log(
@@ -77,6 +109,7 @@ async function bootstrap() {
   Logger.log(
     `📚 Swagger documentation available at: http://localhost:${port}/api/docs`,
   );
+  Logger.log(`🌐 Frontend served from: http://localhost:${port}/`);
 }
 
 bootstrap();
