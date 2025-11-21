@@ -54,6 +54,7 @@ services:
 
   api:
     build:
+      context: .
       dockerfile: apps/api/Dockerfile
     container_name: library-platform-api
     restart: unless-stopped
