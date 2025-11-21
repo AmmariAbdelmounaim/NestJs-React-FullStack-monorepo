@@ -114,7 +114,6 @@ export class LoansService {
     const loans = !userId
       ? await this.loansRepository.findOngoing()
       : await this.loansRepository.findOngoingByUserId(userId);
-    console.log('loans: ', loans);
     return loans.map((loan) =>
       mapDto(LoanResponseDto, {
         ...loan,
