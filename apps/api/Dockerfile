@@ -15,6 +15,9 @@ RUN npm ci
 # Copy workspace configuration
 COPY . .
 
+# Sync TypeScript project references
+RUN npx nx sync
+
 # Build the API
 RUN npm run build:api
 
