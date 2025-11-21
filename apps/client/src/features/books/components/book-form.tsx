@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/popover';
 import { ChevronDownIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
+import { Link } from '@tanstack/react-router';
 
 export interface BookFormProps {
   defaultValues?: Partial<BookFormData>;
@@ -41,10 +42,9 @@ export function BookForm({
   authors = [],
   isLoading = false,
   submitButtonText = 'Submit',
-  disableAuthors = false,
+  disableAuthors,
 }: BookFormProps) {
   const [openCalendar, setOpenCalendar] = useState(false);
-
   const form = useForm<BookFormData>({
     resolver: zodResolver(bookSchema),
     defaultValues: {
@@ -226,55 +226,50 @@ export function BookForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="authorIds"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center justify-between">
-                <FormLabel>Authors</FormLabel>
-                {!disableAuthors ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      // TODO: Navigate to add author page when route is created
-                      console.log('Navigate to add author page');
-                    }}
+        {!disableAuthors && (
+          <FormField
+            control={form.control}
+            name="authorIds"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex items-center justify-between">
+                  <FormLabel>Authors</FormLabel>
+                  <Link
+                    to="/admin/authors/add"
                     className="text-primary text-sm hover:underline"
                   >
                     Add new author
-                  </button>
-                ) : null}
-              </div>
-              <FormControl>
-                <MultiSelect
-                  disabled={disableAuthors}
-                  options={
-                    authors.length === 0
-                      ? []
-                      : authors.map((author) => ({
-                          value: author.id,
-                          label: formatAuthorName(author),
-                        }))
-                  }
-                  value={field.value}
-                  onChange={(values) => {
-                    field.onChange(values.map(Number));
-                  }}
-                  placeholder={
-                    authors.length === 0
-                      ? 'No authors available'
-                      : 'Select authors...'
-                  }
-                />
-              </FormControl>
-              <FormDescription>
-                Select one or more authors for this book
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  </Link>
+                </div>
+                <FormControl>
+                  <MultiSelect
+                    options={
+                      authors.length === 0
+                        ? []
+                        : authors.map((author) => ({
+                            value: author.id,
+                            label: formatAuthorName(author),
+                          }))
+                    }
+                    value={field.value}
+                    onChange={(values) => {
+                      field.onChange(values.map(Number));
+                    }}
+                    placeholder={
+                      authors.length === 0
+                        ? 'No authors available'
+                        : 'Select authors...'
+                    }
+                  />
+                </FormControl>
+                <FormDescription>
+                  Select one or more authors for this book
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}

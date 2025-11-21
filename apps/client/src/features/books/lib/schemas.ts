@@ -34,7 +34,7 @@ export const bookSchema = z.object({
     .optional()
     .or(z.literal('')),
   publicationDate: z.string().optional().or(z.literal('')),
-  authorIds: z.array(z.number()).min(1, 'At least one author is required'),
+  authorIds: z.array(z.number()).optional(),
   coverImageUrl: z
     .string()
     .refine(

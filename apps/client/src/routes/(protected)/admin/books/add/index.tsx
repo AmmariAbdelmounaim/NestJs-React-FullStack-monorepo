@@ -6,6 +6,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import {
   useBooksControllerCreate,
   getBooksControllerFindAllQueryKey,
+  getBooksControllerSearchSimpleQueryKey,
 } from '@/api/generated/books/books';
 import { useAuthorsControllerFindAll } from '@/api/generated/authors/authors';
 import { getErrorMessage } from '@/lib/api-errors';
@@ -37,7 +38,7 @@ function RouteComponent() {
         if (response.status === 201 && response.data) {
           // Invalidate books list to refresh the catalog
           queryClient.invalidateQueries({
-            queryKey: getBooksControllerFindAllQueryKey(),
+            queryKey: getBooksControllerSearchSimpleQueryKey(),
           });
 
           // Show success toast
