@@ -25,12 +25,12 @@ if [ -f "$ROOT_DIR/.env" ]; then
 fi
 
 # Database connection settings (with defaults)
-POSTGRES_USER=${POSTGRES_USER:-abdelmounaim}
-POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-library_pass}
-POSTGRES_DB=${POSTGRES_DB:-library_db}
-DB_APP_ROLE=${DB_APP_ROLE:-library_app}
-DB_APP_PASSWORD=${DB_APP_PASSWORD:-library_app_password}
-POSTGRES_CONTAINER_NAME=${POSTGRES_CONTAINER_NAME:-library-platform-db}
+POSTGRES_USER=${POSTGRES_USER}
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+POSTGRES_DB=${POSTGRES_DB}
+DB_APP_ROLE=${DB_APP_ROLE}
+DB_APP_PASSWORD=${DB_APP_PASSWORD}
+POSTGRES_CONTAINER_NAME="library-platform-db"
 
 # Check if Docker container is running
 if ! docker ps --format '{{.Names}}' | grep -q "^${POSTGRES_CONTAINER_NAME}$"; then

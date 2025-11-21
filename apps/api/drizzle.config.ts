@@ -2,7 +2,6 @@ import { defineConfig } from 'drizzle-kit';
 import { join } from 'node:path';
 import * as dotenv from 'dotenv';
 
-// Load from root .env file
 dotenv.config({ path: join(__dirname, '..', '..', '.env') });
 
 export default defineConfig({
@@ -12,7 +11,7 @@ export default defineConfig({
   dbCredentials: {
     host: process.env.POSTGRES_HOST || 'localhost',
     port: Number(process.env.POSTGRES_PORT) || 5432,
-    user: process.env.POSTGRES_USER || 'user',
+    user: process.env.POSTGRES_USER || 'abdelmounaim',
     password: process.env.POSTGRES_PASSWORD || 'password',
     database: process.env.POSTGRES_DB || 'library_db',
   },

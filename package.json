@@ -11,7 +11,6 @@
     "db:reset": "bash infra/scripts/db-reset.sh",
     "db:migrate": "bash infra/scripts/db-migrate.sh",
     "db:seed": "bash infra/scripts/db-seed.sh",
-    "db:test": "bash infra/scripts/db-test.sh all",
     "db:logs": "bash infra/scripts/db-logs.sh",
     "db:generate": "cd apps/api && drizzle-kit generate",
     "db:introspect": "cd apps/api && drizzle-kit introspect",

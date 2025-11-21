@@ -68,8 +68,14 @@ describe('JwtStrategy', () => {
 
       const result = await strategy.validate(mockPayload);
 
-      expect(usersRepository.findById).toHaveBeenCalledWith(1);
-      expect(result).toEqual(mockUser);
+      expect(usersRepository.findById).toHaveBeenCalledWith(BigInt(1));
+      expect(result).toMatchObject({
+        id: 1,
+        email: mockUser.email,
+        firstName: mockUser.firstName,
+        lastName: mockUser.lastName,
+        role: mockUser.role,
+      });
     });
 
     it('should throw UnauthorizedException when user not found', async () => {
@@ -82,7 +88,7 @@ describe('JwtStrategy', () => {
         'User not found',
       );
 
-      expect(usersRepository.findById).toHaveBeenCalledWith(1);
+      expect(usersRepository.findById).toHaveBeenCalledWith(BigInt(1));
     });
 
     it('should handle different user roles', async () => {
@@ -100,7 +106,7 @@ describe('JwtStrategy', () => {
       const result = await strategy.validate(adminPayload);
 
       expect(result.role).toBe('ADMIN');
-      expect(usersRepository.findById).toHaveBeenCalledWith(1);
+      expect(usersRepository.findById).toHaveBeenCalledWith(BigInt(1));
     });
   });
 });

@@ -3,7 +3,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersRepository } from './users.repository';
 import { CreateUserDto, UpdateUserDto } from './users.dto';
-import { UserRow, DEFAULT_USER_ROLE } from '../db';
+import { UserRow } from '../db';
 import * as bcrypt from 'bcrypt';
 
 // Mock bcrypt
@@ -85,13 +85,15 @@ describe('UsersService', () => {
         createUserDto.password,
         10,
       );
-      expect(repository.create).toHaveBeenCalledWith({
-        email: createUserDto.email,
-        firstName: createUserDto.firstName,
-        lastName: createUserDto.lastName,
-        password: 'hashedPassword123',
-        role: DEFAULT_USER_ROLE,
-      });
+      expect(repository.create).toHaveBeenCalledWith(
+        {
+          email: createUserDto.email,
+          firstName: createUserDto.firstName,
+          lastName: createUserDto.lastName,
+          password: 'hashedPassword123',
+        },
+        undefined,
+      );
       // Verify expected fields match (password may be present due to OmitType runtime limitation)
       expect(result).toMatchObject(mockUserResponse);
       expect(result.id).toBe(1);
@@ -124,7 +126,7 @@ describe('UsersService', () => {
 
       const result = await service.findOne(1);
 
-      expect(repository.findById).toHaveBeenCalledWith(1);
+      expect(repository.findById).toHaveBeenCalledWith(BigInt(1), undefined);
       // Verify expected fields match (password may be present due to OmitType runtime limitation)
       expect(result).toMatchObject(mockUserResponse);
       expect(result.id).toBe(1);
@@ -188,13 +190,17 @@ describe('UsersService', () => {
 
       const result = await service.update(1, updateUserDto);
 
-      expect(repository.findById).toHaveBeenCalledWith(1);
-      expect(repository.update).toHaveBeenCalledWith(1, {
-        email: mockUser.email,
-        firstName: 'Jane',
-        lastName: 'Smith',
-        password: mockUser.password,
-      });
+      expect(repository.findById).toHaveBeenCalledWith(BigInt(1), undefined);
+      expect(repository.update).toHaveBeenCalledWith(
+        BigInt(1),
+        {
+          email: mockUser.email,
+          firstName: 'Jane',
+          lastName: 'Smith',
+          password: mockUser.password,
+        },
+        undefined,
+      );
       expect(result.firstName).toBe('Jane');
       expect(result.lastName).toBe('Smith');
     });
@@ -212,6 +218,7 @@ describe('UsersService', () => {
 
       const result = await service.update(1, emailUpdateDto);
 
+      expect(repository.findById).toHaveBeenCalledWith(BigInt(1), undefined);
       expect(repository.existsByEmail).toHaveBeenCalledWith(
         'newemail@example.com',
       );
@@ -231,6 +238,7 @@ describe('UsersService', () => {
       await expect(service.update(1, emailUpdateDto)).rejects.toThrow(
         'User with this email already exists',
       );
+      expect(repository.findById).toHaveBeenCalledWith(BigInt(1), undefined);
     });
 
     it('should hash password if provided in update', async () => {
@@ -248,10 +256,11 @@ describe('UsersService', () => {
 
       expect(mockedBcrypt.hash).toHaveBeenCalledWith('newPassword123', 10);
       expect(repository.update).toHaveBeenCalledWith(
-        1,
+        BigInt(1),
         expect.objectContaining({
           password: 'newHashedPassword',
         }),
+        undefined,
       );
     });
 
@@ -261,6 +270,7 @@ describe('UsersService', () => {
       await expect(service.update(1, updateUserDto)).rejects.toThrow(
         NotFoundException,
       );
+      expect(repository.findById).toHaveBeenCalledWith(BigInt(1), undefined);
     });
 
     it('should throw NotFoundException if update returns undefined', async () => {
@@ -270,6 +280,7 @@ describe('UsersService', () => {
       await expect(service.update(1, updateUserDto)).rejects.toThrow(
         NotFoundException,
       );
+      expect(repository.findById).toHaveBeenCalledWith(BigInt(1), undefined);
     });
   });
 
@@ -280,14 +291,15 @@ describe('UsersService', () => {
 
       await service.remove(1);
 
-      expect(repository.findById).toHaveBeenCalledWith(1);
-      expect(repository.delete).toHaveBeenCalledWith(1);
+      expect(repository.findById).toHaveBeenCalledWith(BigInt(1), undefined);
+      expect(repository.delete).toHaveBeenCalledWith(BigInt(1), undefined);
     });
 
     it('should throw NotFoundException if user not found during findOne check', async () => {
       repository.findById.mockResolvedValue(undefined);
 
       await expect(service.remove(1)).rejects.toThrow(NotFoundException);
+      expect(repository.findById).toHaveBeenCalledWith(BigInt(1), undefined);
       expect(repository.delete).not.toHaveBeenCalled();
     });
 
@@ -296,6 +308,8 @@ describe('UsersService', () => {
       repository.delete.mockResolvedValue(false);
 
       await expect(service.remove(1)).rejects.toThrow(NotFoundException);
+      expect(repository.findById).toHaveBeenCalledWith(BigInt(1), undefined);
+      expect(repository.delete).toHaveBeenCalledWith(BigInt(1), undefined);
     });
   });
 });

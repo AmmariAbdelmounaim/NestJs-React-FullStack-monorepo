@@ -92,9 +92,6 @@ export const books = pgTable(
   ],
 );
 
-export type BookRow = typeof books.$inferSelect;
-export type BookInsert = typeof books.$inferInsert;
-
 export const loans = pgTable(
   'loans',
   {
@@ -227,9 +224,6 @@ export const membershipCards = pgTable(
   ],
 );
 
-export type MembershipCardRow = typeof membershipCards.$inferSelect;
-export type MembershipCardInsert = typeof membershipCards.$inferInsert;
-
 export const authors = pgTable(
   'authors',
   {
@@ -252,9 +246,6 @@ export const authors = pgTable(
     ),
   ],
 );
-
-export type AuthorRow = typeof authors.$inferSelect;
-export type AuthorInsert = typeof authors.$inferInsert;
 
 export const users = pgTable(
   'users',
@@ -305,9 +296,6 @@ export const users = pgTable(
     }),
   ],
 );
-
-export type UserRow = typeof users.$inferSelect;
-export type UserInsert = typeof users.$inferInsert;
 
 export const bookAuthors = pgTable(
   'book_authors',

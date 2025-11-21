@@ -9,10 +9,10 @@ import {
   MaxLength,
   IsEnum,
 } from 'class-validator';
-import { UserRow, USER_ROLES } from '../db';
+import { UserRow } from '../db';
 
 // Base class for all user DTOs
-// This class contains all user fields and is used to create other DTOs via PickType/OmitType/PartialType
+// this class contains all user fields and is used to create other DTOs via PickType/OmitType/PartialType
 export class UserBaseDto {
   @Expose()
   @ApiProperty({
@@ -26,6 +26,7 @@ export class UserBaseDto {
   @ApiProperty({
     description: 'User email address',
     example: 'user@example.com',
+    type: String,
   })
   @IsEmail()
   @IsNotEmpty()
@@ -35,6 +36,7 @@ export class UserBaseDto {
   @ApiProperty({
     description: 'User first name',
     example: 'John',
+    type: String,
     minLength: 2,
     maxLength: 100,
   })
@@ -47,6 +49,7 @@ export class UserBaseDto {
   @ApiProperty({
     description: 'User last name',
     example: 'Doe',
+    type: String,
     minLength: 2,
     maxLength: 100,
   })
@@ -59,6 +62,7 @@ export class UserBaseDto {
   @ApiProperty({
     description: 'User password',
     example: 'SecurePassword123!',
+    type: String,
     minLength: 8,
   })
   @IsString()
@@ -70,9 +74,10 @@ export class UserBaseDto {
   @ApiProperty({
     description: 'User role',
     example: 'USER',
-    enum: USER_ROLES,
+    enum: ['ADMIN', 'USER'],
+    type: String,
   })
-  @IsEnum(USER_ROLES)
+  @IsEnum(['ADMIN', 'USER'])
   role: UserRow['role'];
 
   @Expose()

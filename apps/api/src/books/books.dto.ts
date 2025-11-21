@@ -31,6 +31,7 @@ export class BookBaseDto {
   @ApiProperty({
     description: 'Book title',
     example: 'To Kill a Mockingbird',
+    type: String,
     minLength: 1,
     maxLength: 255,
   })
@@ -76,6 +77,7 @@ export class BookBaseDto {
   @ApiProperty({
     description: 'Book genre',
     example: 'Classic Literature',
+    type: String,
     maxLength: 100,
     required: false,
   })
@@ -101,6 +103,7 @@ export class BookBaseDto {
     description: 'Book description',
     example:
       'A gripping tale of racial injustice and childhood innocence in the American South.',
+    type: String,
     required: false,
   })
   @IsOptional()
@@ -111,6 +114,7 @@ export class BookBaseDto {
   @ApiProperty({
     description: 'Cover image URL',
     example: 'https://covers.openlibrary.org/b/id/12345678-L.jpg',
+    type: String,
     required: false,
   })
   @IsOptional()
@@ -121,6 +125,7 @@ export class BookBaseDto {
   @ApiProperty({
     description: 'External source name',
     example: 'google_books',
+    type: String,
     maxLength: 100,
     required: false,
   })
@@ -133,6 +138,7 @@ export class BookBaseDto {
   @ApiProperty({
     description: 'External source ID',
     example: 'ISBN:9780061120084',
+    type: String,
     maxLength: 255,
     required: false,
   })
@@ -220,6 +226,7 @@ export class SearchBooksDto {
   @ApiProperty({
     description: 'Search query string for full-text search',
     example: 'mockingbird',
+    type: String,
     required: false,
   })
   @IsOptional()
@@ -229,6 +236,7 @@ export class SearchBooksDto {
   @ApiProperty({
     description: 'Genre filter (exact match)',
     example: 'Fiction',
+    type: String,
     required: false,
   })
   @IsOptional()
@@ -241,6 +249,7 @@ export class SearchSimpleBooksDto {
   @ApiProperty({
     description: 'Title search string (case-insensitive pattern match)',
     example: 'mockingbird',
+    type: String,
     required: false,
   })
   @IsOptional()
@@ -250,6 +259,7 @@ export class SearchSimpleBooksDto {
   @ApiProperty({
     description: 'Genre filter (exact match)',
     example: 'Fiction',
+    type: String,
     required: false,
   })
   @IsOptional()
@@ -260,6 +270,7 @@ export class SearchSimpleBooksDto {
   @ApiProperty({
     description: 'Author name search (searches first, last, and full name)',
     example: 'Harper Lee',
+    type: String,
     required: false,
   })
   @IsOptional()
@@ -272,6 +283,7 @@ export class SearchGoogleBooksDto {
     description:
       'Search query string (supports Google Books query syntax: title, author, ISBN, etc.)',
     example: 'harper lee mockingbird',
+    type: String,
     required: true,
   })
   @IsString()
@@ -281,6 +293,7 @@ export class SearchGoogleBooksDto {
   @ApiProperty({
     description: 'Maximum number of results to return (1-40)',
     example: 10,
+    type: Number,
     required: false,
     default: 10,
     minimum: 1,

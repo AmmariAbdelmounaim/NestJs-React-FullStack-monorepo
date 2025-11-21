@@ -14,6 +14,7 @@ export class AuthResponseDto {
     description: 'JWT access token',
     example:
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNjE2MjM5MDIyfQ...',
+    type: String,
   })
   @Expose()
   @IsString()

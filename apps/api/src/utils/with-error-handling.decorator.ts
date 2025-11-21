@@ -6,7 +6,6 @@ export const WithErrorHandling = (
   errorMessage?: string | ((...args: unknown[]) => string),
   onError?: (error: unknown, context: { args: unknown[] }) => Promise<void>,
 ) => {
-  // Create a logger instance for this service
   const logger = new Logger(serviceName);
 
   return function (

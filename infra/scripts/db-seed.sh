@@ -25,14 +25,13 @@ if [ -f "$ROOT_DIR/.env" ]; then
 fi
 
 # Database connection settings (with defaults)
-POSTGRES_USER=${POSTGRES_USER:-abdelmounaim}
-POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-library_pass}
-POSTGRES_DB=${POSTGRES_DB:-library_db}
-POSTGRES_CONTAINER_NAME=${POSTGRES_CONTAINER_NAME:-library-platform-db}
+POSTGRES_USER=${POSTGRES_USER}
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+POSTGRES_DB=${POSTGRES_DB}
 
 # Check if Docker container is running
-if ! docker ps --format '{{.Names}}' | grep -q "^${POSTGRES_CONTAINER_NAME}$"; then
-    echo -e "${RED}Error: Docker container '${POSTGRES_CONTAINER_NAME}' is not running.${NC}"
+if ! docker ps --format '{{.Names}}' | grep -q "library-platform-db"; then
+    echo -e "${RED}Error: Docker container library-platform-db is not running.${NC}"
     echo ""
     echo "Start it with:"
     echo "  npm run db:start"
@@ -58,7 +57,7 @@ if [ -n "$1" ]; then
     
     echo "Running seed: $1"
     
-    if docker exec -i "${POSTGRES_CONTAINER_NAME}" psql \
+    if docker exec -i "library-app" psql \
         -U "$POSTGRES_USER" \
         -d "$POSTGRES_DB" \
         -v ON_ERROR_STOP=1 \
@@ -80,7 +79,7 @@ else
             filename=$(basename "$seed")
             echo -e "${BLUE}→ $filename${NC}"
             
-            if docker exec -i "${POSTGRES_CONTAINER_NAME}" psql \
+            if docker exec -i "library-platform-db" psql \
                 -U "$POSTGRES_USER" \
                 -d "$POSTGRES_DB" \
                 -v ON_ERROR_STOP=1 \

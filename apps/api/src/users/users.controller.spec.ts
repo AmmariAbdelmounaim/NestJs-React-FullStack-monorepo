@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { UpdateUserDto, UserResponseDto } from './users.dto';
-import { UserRow } from '../db';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SelfOrAdminGuard } from '../auth/guards/self-or-admin.guard';
@@ -10,17 +9,6 @@ import { SelfOrAdminGuard } from '../auth/guards/self-or-admin.guard';
 describe('UsersController', () => {
   let controller: UsersController;
   let service: jest.Mocked<UsersService>;
-
-  const mockUser: UserRow = {
-    id: BigInt(1),
-    email: 'test@example.com',
-    firstName: 'John',
-    lastName: 'Doe',
-    password: 'hashedPassword123',
-    role: 'USER' as const,
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-  };
 
   const mockUserResponse: UserResponseDto = {
     id: 1,
@@ -66,15 +54,13 @@ describe('UsersController', () => {
 
   describe('getCurrentUser', () => {
     it('should return the current authenticated user', () => {
-      // Mock request object for testing - only user property is needed
       const mockRequest = {
-        user: mockUser,
+        user: mockUserResponse,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
 
       const result = controller.getCurrentUser(mockRequest);
 
-      // Verify expected fields match (password may be present due to OmitType runtime limitation)
       expect(result).toMatchObject(mockUserResponse);
       expect(result.id).toBe(1);
       expect(result.email).toBe('test@example.com');
@@ -87,10 +73,14 @@ describe('UsersController', () => {
   describe('findOne', () => {
     it('should return a user by id', async () => {
       service.findOne.mockResolvedValue(mockUserResponse);
+      const mockRequest = {
+        user: mockUserResponse,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any;
 
-      const result = await controller.findOne(1);
+      const result = await controller.findOne(1, mockRequest);
 
-      expect(service.findOne).toHaveBeenCalledWith(1);
+      expect(service.findOne).toHaveBeenCalledWith(1, mockUserResponse);
       expect(result).toEqual(mockUserResponse);
     });
   });
@@ -107,10 +97,18 @@ describe('UsersController', () => {
         ...updateUserDto,
       };
       service.update.mockResolvedValue(updatedUser);
+      const mockRequest = {
+        user: mockUserResponse,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any;
 
-      const result = await controller.update(1, updateUserDto);
+      const result = await controller.update(1, updateUserDto, mockRequest);
 
-      expect(service.update).toHaveBeenCalledWith(1, updateUserDto);
+      expect(service.update).toHaveBeenCalledWith(
+        1,
+        updateUserDto,
+        mockUserResponse,
+      );
       expect(result).toEqual(updatedUser);
     });
   });
@@ -118,10 +116,14 @@ describe('UsersController', () => {
   describe('remove', () => {
     it('should delete a user successfully', async () => {
       service.remove.mockResolvedValue(undefined);
+      const mockRequest = {
+        user: mockUserResponse,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any;
 
-      await controller.remove(1);
+      await controller.remove(1, mockRequest);
 
-      expect(service.remove).toHaveBeenCalledWith(1);
+      expect(service.remove).toHaveBeenCalledWith(1, mockUserResponse);
     });
   });
 });

@@ -2,13 +2,15 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { UserRole } from '../../db';
+import { UserRow } from '../../db';
 import { UsersRepository } from '../../users/users.repository';
+import { mapDto } from '../../utils/map-dto';
+import { UserResponseDto } from '../../users/users.dto';
 
 export interface JwtPayload {
-  sub: string; // JWT payloads are JSON, so bigint must be string
+  sub: string;
   email: string;
-  role: UserRole;
+  role: UserRow['role'];
 }
 
 @Injectable()
@@ -26,10 +28,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload) {
     const userId = BigInt(payload.sub);
-    const user = await this.usersRepository.findById(Number(userId));
+    const user = await this.usersRepository.findById(userId);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
-    return user;
+    return mapDto(UserResponseDto, {
+      ...user,
+      id: Number(user.id),
+    });
   }
 }

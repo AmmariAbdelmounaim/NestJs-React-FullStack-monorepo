@@ -35,9 +35,6 @@ RUN npm ci
 # Copy workspace configuration
 COPY . .
 
-# Build the client (VITE_API_URL will be set at build time or use relative path)
-ARG VITE_API_URL=/api
-ENV VITE_API_URL=$VITE_API_URL
 
 RUN npm run build:client
 

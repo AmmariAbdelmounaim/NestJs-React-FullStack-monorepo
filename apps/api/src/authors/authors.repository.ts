@@ -9,43 +9,31 @@ import {
   AuthorInsert,
   BookRow,
 } from '../db';
+import { TransactionService } from '../db/transaction.service';
 
 type Database = ReturnType<typeof createDatabase>;
 
 @Injectable()
 export class AuthorsRepository {
-  constructor(@Inject('DB') private readonly db: Database) {}
+  constructor(
+    @Inject('DB') private readonly db: Database,
+    private readonly transactionService: TransactionService,
+  ) {}
 
-  /**
-   * Find an author by ID
-   * @param id - Author ID (number or bigint)
-   * @returns Author row or undefined if not found
-   */
-  async findById(id: number | bigint): Promise<AuthorRow | undefined> {
-    const idBigInt = typeof id === 'number' ? BigInt(id) : id;
+  async findById(id: bigint): Promise<AuthorRow | undefined> {
     const [author] = await this.db
       .select()
       .from(authors)
-      .where(eq(authors.id, idBigInt))
+      .where(eq(authors.id, id))
       .limit(1);
     return author;
   }
 
-  /**
-   * Find all authors
-   * @returns Array of author rows
-   */
   async findAll(): Promise<AuthorRow[]> {
     return await this.db.select().from(authors);
   }
 
-  /**
-   * Find authors by book ID
-   * @param bookId - Book ID (number or bigint)
-   * @returns Array of author rows
-   */
-  async findByBookId(bookId: number | bigint): Promise<AuthorRow[]> {
-    const bookIdNumber = typeof bookId === 'bigint' ? Number(bookId) : bookId;
+  async findByBookId(bookId: number): Promise<AuthorRow[]> {
     return await this.db
       .select({
         id: authors.id,
@@ -58,17 +46,10 @@ export class AuthorsRepository {
       })
       .from(authors)
       .innerJoin(bookAuthors, eq(authors.id, bookAuthors.authorId))
-      .where(eq(bookAuthors.bookId, bookIdNumber));
+      .where(eq(bookAuthors.bookId, bookId));
   }
 
-  /**
-   * Find books by author ID
-   * @param authorId - Author ID (number or bigint)
-   * @returns Array of book rows
-   */
-  async findBooksByAuthorId(authorId: number | bigint): Promise<BookRow[]> {
-    const authorIdNumber =
-      typeof authorId === 'bigint' ? Number(authorId) : authorId;
+  async findBooksByAuthorId(authorId: number): Promise<BookRow[]> {
     return await this.db
       .select({
         id: books.id,
@@ -88,52 +69,78 @@ export class AuthorsRepository {
       })
       .from(books)
       .innerJoin(bookAuthors, eq(books.id, bookAuthors.bookId))
-      .where(eq(bookAuthors.authorId, authorIdNumber));
+      .where(eq(bookAuthors.authorId, authorId));
   }
 
-  /**
-   * Create a new author
-   * @param data - Author data to insert
-   * @returns Created author row
-   */
-  async create(data: AuthorInsert): Promise<AuthorRow> {
-    const [newAuthor] = await this.db.insert(authors).values(data).returning();
-    return newAuthor;
+  async create(
+    data: AuthorInsert,
+    rlsContext?: { userId?: string; userRole?: string },
+  ): Promise<AuthorRow> {
+    // Authors can only be created by ADMIN, so RLS context is required
+    if (rlsContext) {
+      return await this.transactionService.withTransaction(async (tx) => {
+        const [newAuthor] = await tx.insert(authors).values(data).returning();
+        return newAuthor;
+      }, rlsContext);
+    } else {
+      // Fallback for non-RLS queries (should not happen in normal flow)
+      const [newAuthor] = await this.db.insert(authors).values(data).returning();
+      return newAuthor;
+    }
   }
 
-  /**
-   * Update an author by ID
-   * @param id - Author ID (number or bigint)
-   * @param data - Partial author data to update
-   * @returns Updated author row or undefined if not found
-   */
   async update(
-    id: number | bigint,
+    id: bigint,
     data: Partial<AuthorInsert>,
+    rlsContext?: { userId?: string; userRole?: string },
   ): Promise<AuthorRow | undefined> {
-    const idBigInt = typeof id === 'number' ? BigInt(id) : id;
-    const [updatedAuthor] = await this.db
-      .update(authors)
-      .set({
-        ...data,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(authors.id, idBigInt))
-      .returning();
-    return updatedAuthor;
+    // Authors can only be updated by ADMIN, so RLS context is required
+    if (rlsContext) {
+      return await this.transactionService.withTransaction(async (tx) => {
+        const [updatedAuthor] = await tx
+          .update(authors)
+          .set({
+            ...data,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(authors.id, id))
+          .returning();
+        return updatedAuthor;
+      }, rlsContext);
+    } else {
+      // Fallback for non-RLS queries (should not happen in normal flow)
+      const [updatedAuthor] = await this.db
+        .update(authors)
+        .set({
+          ...data,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(authors.id, id))
+        .returning();
+      return updatedAuthor;
+    }
   }
 
-  /**
-   * Delete an author by ID
-   * @param id - Author ID (number or bigint)
-   * @returns true if author was deleted, false if not found
-   */
-  async delete(id: number | bigint): Promise<boolean> {
-    const idBigInt = typeof id === 'number' ? BigInt(id) : id;
-    const result = await this.db
-      .delete(authors)
-      .where(eq(authors.id, idBigInt))
-      .returning();
-    return result.length > 0;
+  async delete(
+    id: bigint,
+    rlsContext?: { userId?: string; userRole?: string },
+  ): Promise<boolean> {
+    // Authors can only be deleted by ADMIN, so RLS context is required
+    if (rlsContext) {
+      return await this.transactionService.withTransaction(async (tx) => {
+        const result = await tx
+          .delete(authors)
+          .where(eq(authors.id, id))
+          .returning();
+        return result.length > 0;
+      }, rlsContext);
+    } else {
+      // Fallback for non-RLS queries (should not happen in normal flow)
+      const result = await this.db
+        .delete(authors)
+        .where(eq(authors.id, id))
+        .returning();
+      return result.length > 0;
+    }
   }
 }

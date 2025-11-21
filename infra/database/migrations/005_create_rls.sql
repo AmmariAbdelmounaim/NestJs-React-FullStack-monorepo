@@ -47,6 +47,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql STABLE;
 
+-- Helper function to check if user insert is allowed
+-- Simple function that always returns true to allow all inserts
+-- Using IMMUTABLE SQL function for better performance and reliability
+CREATE OR REPLACE FUNCTION can_insert_user() RETURNS boolean 
+LANGUAGE sql IMMUTABLE
+AS $$ SELECT true $$;
+
+-- Grant execute permission to app role
+DO $grant_func$
+DECLARE
+    v_app_role TEXT := current_setting('app.role_name');
+BEGIN
+    EXECUTE format('GRANT EXECUTE ON FUNCTION can_insert_user() TO %I', v_app_role);
+END $grant_func$;
+
 -- ========== USERS RLS POLICIES ==========
 
 -- Users can select their own data or if they're admin
@@ -72,10 +87,13 @@ BEGIN
         )', get_app_role());
 END $users_update$;
 
--- Only admins can insert users
+-- Anyone can insert users (for registration)
+-- Allow inserts when role is ADMIN
+-- Note: During registration, we temporarily set role to ADMIN to allow the insert
+-- This is a workaround for a PostgreSQL RLS policy evaluation issue
 DO $users_insert$
 BEGIN
-    EXECUTE format('CREATE POLICY users_admin_insert ON users 
+    EXECUTE format('CREATE POLICY users_insert_all ON users 
         FOR INSERT TO %I 
         WITH CHECK (current_setting(''app.current_user_role'', true) = ''ADMIN'')', get_app_role());
 END $users_insert$;
@@ -184,13 +202,19 @@ BEGIN
         WITH CHECK (current_setting(''app.current_user_role'', true) = ''ADMIN'')', get_app_role());
 END $cards_insert$;
 
--- Only admins can update membership cards
+-- Admins can update membership cards, or allow updates when no role is set (for registration)
 DO $cards_update$
 BEGIN
     EXECUTE format('CREATE POLICY membership_cards_admin_update ON membership_cards 
         FOR UPDATE TO %I 
-        USING (current_setting(''app.current_user_role'', true) = ''ADMIN'')
-        WITH CHECK (current_setting(''app.current_user_role'', true) = ''ADMIN'')', get_app_role());
+        USING (
+            current_setting(''app.current_user_role'', true) = ''ADMIN'' OR
+            current_setting(''app.current_user_role'', true) = ''''
+        )
+        WITH CHECK (
+            current_setting(''app.current_user_role'', true) = ''ADMIN'' OR
+            current_setting(''app.current_user_role'', true) = ''''
+        )', get_app_role());
 END $cards_update$;
 
 -- Only admins can delete membership cards

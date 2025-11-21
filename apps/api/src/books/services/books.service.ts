@@ -59,7 +59,10 @@ export class BooksService {
   }
 
   @WithErrorHandling('BooksService', 'create')
-  async create(createBookDto: CreateBookDto): Promise<BookResponseDto> {
+  async create(
+    createBookDto: CreateBookDto,
+    currentUser?: { id: number; role: string },
+  ): Promise<BookResponseDto> {
     if (createBookDto.isbn13) {
       const existingBook = await this.booksRepository.existsByIsbn13(
         createBookDto.isbn13,
@@ -70,7 +73,11 @@ export class BooksService {
       }
     }
 
-    const newBook = await this.booksRepository.create(createBookDto);
+    const rlsContext = currentUser
+      ? { userId: currentUser.id.toString(), userRole: currentUser.role }
+      : undefined;
+
+    const newBook = await this.booksRepository.create(createBookDto, rlsContext);
     const bookId = Number(newBook.id);
 
     if (createBookDto.isbn13 || createBookDto.isbn10) {
@@ -110,13 +117,12 @@ export class BooksService {
 
   @WithErrorHandling('BooksService', 'findOne')
   async findOne(id: number): Promise<BookWithAuthorsDto> {
-    const book = await this.booksRepository.findById(id);
+    const book = await this.booksRepository.findById(BigInt(id));
 
     if (!book) {
       throw new NotFoundException(`Book with the id ${id} is not found`);
     }
 
-    // Get authors who wrote this book
     const authors = await this.authorsRepository.findByBookId(id);
 
     const bookResponse = mapDto(BookResponseDto, {
@@ -124,7 +130,6 @@ export class BooksService {
       id: Number(book.id),
     });
 
-    // Convert authors to plain objects (not DTOs yet) so @Type() can transform them
     const authorsPlain = authors.map((author) => ({
       ...author,
       id: Number(author.id),
@@ -141,9 +146,9 @@ export class BooksService {
   async update(
     id: number,
     updateBookDto: UpdateBookDto,
+    currentUser?: { id: number; role: string },
   ): Promise<BookResponseDto> {
-    // Check if book exists
-    const existingBook = await this.booksRepository.findById(id);
+    const existingBook = await this.booksRepository.findById(BigInt(id));
 
     if (!existingBook) {
       throw new NotFoundException(`Book with the id ${id} is not found`);
@@ -184,8 +189,16 @@ export class BooksService {
     if (updateBookDto.externalMetadata !== undefined)
       updateData.externalMetadata = updateBookDto.externalMetadata;
 
+    const rlsContext = currentUser
+      ? { userId: currentUser.id.toString(), userRole: currentUser.role }
+      : undefined;
+
     // Update book
-    const updatedBook = await this.booksRepository.update(id, updateData);
+    const updatedBook = await this.booksRepository.update(
+      BigInt(id),
+      updateData,
+      rlsContext,
+    );
 
     if (!updatedBook) {
       throw new NotFoundException(`Book with the id ${id} is not found`);
@@ -198,11 +211,18 @@ export class BooksService {
   }
 
   @WithErrorHandling('BooksService', 'remove')
-  async remove(id: number): Promise<void> {
+  async remove(
+    id: number,
+    currentUser?: { id: number; role: string },
+  ): Promise<void> {
     // Check if book exists (findOne already throws NotFoundException if not found)
     await this.findOne(id);
 
-    const deleted = await this.booksRepository.delete(id);
+    const rlsContext = currentUser
+      ? { userId: currentUser.id.toString(), userRole: currentUser.role }
+      : undefined;
+
+    const deleted = await this.booksRepository.delete(BigInt(id), rlsContext);
     if (!deleted) {
       throw new NotFoundException(`Book with the id ${id} is not found`);
     }

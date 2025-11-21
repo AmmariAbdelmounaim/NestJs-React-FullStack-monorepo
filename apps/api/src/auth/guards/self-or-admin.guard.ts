@@ -4,37 +4,35 @@ import {
   ExecutionContext,
   ForbiddenException,
 } from '@nestjs/common';
-import { UserRole, USER_ROLES, UserRow } from '../../db';
+import { UserRow } from '../../db';
+import { UserResponseDto } from '../../users/users.dto';
 
 interface AuthenticatedRequest {
-  user: UserRow;
+  user: UserResponseDto;
   params: { id: string };
 }
 
-const ADMIN_ROLE: UserRole = USER_ROLES[0]; // 'ADMIN'
+const ADMIN_ROLE: UserRow['role'] = 'ADMIN';
 
 @Injectable()
 export class SelfOrAdminGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const user: UserRow = request.user;
+    const user: UserResponseDto = request.user;
     const requestedUserId = parseInt(request.params.id, 10);
 
     if (!user) {
       throw new ForbiddenException('User not authenticated');
     }
 
-    // Admin can access any user
     if (user.role === ADMIN_ROLE) {
       return true;
     }
 
-    // Regular users can only access their own data
-    // Convert BigInt to number for comparison
     if (Number(user.id) === requestedUserId) {
       return true;
     }
 
-    throw new ForbiddenException('You can only access your own data');
+    throw new ForbiddenException("You're not authorized");
   }
 }

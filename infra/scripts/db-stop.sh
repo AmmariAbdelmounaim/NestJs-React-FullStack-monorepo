@@ -21,7 +21,7 @@ echo ""
 
 # Stop Docker Compose
 cd "$INFRA_DIR"
-docker-compose down
+docker-compose down postgres
 
 echo ""
 echo -e "${GREEN}✓ Database stopped successfully${NC}"

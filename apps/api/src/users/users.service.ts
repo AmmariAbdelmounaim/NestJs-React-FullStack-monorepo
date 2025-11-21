@@ -7,7 +7,7 @@ import { mapDto } from '../utils/map-dto';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto, UpdateUserDto, UserResponseDto } from './users.dto';
 import { UsersRepository } from './users.repository';
-import { UserInsert, DEFAULT_USER_ROLE } from '../db';
+import { UserInsert } from '../db';
 import { WithErrorHandling } from '../utils/with-error-handling.decorator';
 
 @Injectable()
@@ -15,7 +15,10 @@ export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
   @WithErrorHandling('UsersService', 'create')
-  async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
+  async create(
+    createUserDto: CreateUserDto,
+    currentUser?: { id: number; role: string },
+  ): Promise<UserResponseDto> {
     // Check if user already exists
     const existingUser = await this.usersRepository.existsByEmail(
       createUserDto.email,
@@ -28,23 +31,37 @@ export class UsersService {
     // Hash password
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
+    // Build RLS context (only admins can create users)
+    const rlsContext = currentUser
+      ? { userId: currentUser.id.toString(), userRole: currentUser.role }
+      : undefined;
+
     // Create user
-    const newUser = await this.usersRepository.create({
-      email: createUserDto.email,
-      firstName: createUserDto.firstName,
-      lastName: createUserDto.lastName,
-      password: hashedPassword,
-      role: DEFAULT_USER_ROLE,
-    });
+    const newUser = await this.usersRepository.create(
+      {
+        email: createUserDto.email,
+        firstName: createUserDto.firstName,
+        lastName: createUserDto.lastName,
+        password: hashedPassword,
+      },
+      rlsContext,
+    );
     return mapDto(UserResponseDto, {
       ...newUser,
-      id: Number(newUser.id), // Convert BigInt to number
+      id: Number(newUser.id),
     });
   }
 
   @WithErrorHandling('UsersService', 'findOne')
-  async findOne(id: number): Promise<UserResponseDto> {
-    const user = await this.usersRepository.findById(id);
+  async findOne(
+    id: number,
+    currentUser?: { id: number; role: string },
+  ): Promise<UserResponseDto> {
+    const rlsContext = currentUser
+      ? { userId: currentUser.id.toString(), userRole: currentUser.role }
+      : undefined;
+
+    const user = await this.usersRepository.findById(BigInt(id), rlsContext);
 
     if (!user) {
       throw new NotFoundException(`User with the id ${id} is not found`);
@@ -52,7 +69,7 @@ export class UsersService {
 
     return mapDto(UserResponseDto, {
       ...user,
-      id: Number(user.id), // Convert BigInt to number
+      id: Number(user.id),
     });
   }
 
@@ -64,7 +81,7 @@ export class UsersService {
     }
     return mapDto(UserResponseDto, {
       ...user,
-      id: Number(user.id), // Convert BigInt to number
+      id: Number(user.id),
     });
   }
 
@@ -72,9 +89,16 @@ export class UsersService {
   async update(
     id: number,
     updateUserDto: UpdateUserDto,
+    currentUser?: { id: number; role: string },
   ): Promise<UserResponseDto> {
-    // Check if user exists (findOne already throws NotFoundException if not found)
-    const existingUser = await this.usersRepository.findById(id);
+    const rlsContext = currentUser
+      ? { userId: currentUser.id.toString(), userRole: currentUser.role }
+      : undefined;
+
+    const existingUser = await this.usersRepository.findById(
+      BigInt(id),
+      rlsContext,
+    );
 
     if (!existingUser) {
       throw new NotFoundException(`User with the id ${id} is not found`);
@@ -105,7 +129,11 @@ export class UsersService {
       updateData.password = await bcrypt.hash(updateUserDto.password, 10);
 
     // Update user
-    const updatedUser = await this.usersRepository.update(id, updateData);
+    const updatedUser = await this.usersRepository.update(
+      BigInt(id),
+      updateData,
+      rlsContext,
+    );
 
     if (!updatedUser) {
       throw new NotFoundException(`User with the id ${id} is not found`);
@@ -113,16 +141,22 @@ export class UsersService {
 
     return mapDto(UserResponseDto, {
       ...updatedUser,
-      id: Number(updatedUser.id), // Convert BigInt to number
+      id: Number(updatedUser.id),
     });
   }
 
   @WithErrorHandling('UsersService', 'remove')
-  async remove(id: number): Promise<void> {
-    // Check if user exists (findOne already throws NotFoundException if not found)
-    await this.findOne(id);
+  async remove(
+    id: number,
+    currentUser?: { id: number; role: string },
+  ): Promise<void> {
+    const rlsContext = currentUser
+      ? { userId: currentUser.id.toString(), userRole: currentUser.role }
+      : undefined;
 
-    const deleted = await this.usersRepository.delete(id);
+    await this.findOne(id, currentUser);
+
+    const deleted = await this.usersRepository.delete(BigInt(id), rlsContext);
     if (!deleted) {
       throw new NotFoundException(`User with the id ${id} is not found`);
     }

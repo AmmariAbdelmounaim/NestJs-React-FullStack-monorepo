@@ -235,17 +235,13 @@ describe('AuthService', () => {
       expect(membershipCardsService.findFirstFree).toHaveBeenCalled();
       expect(usersService.create).toHaveBeenCalledWith(registerDto);
       expect(membershipCardsRepository.update).toHaveBeenCalledWith(
-        mockMembershipCard.id,
+        BigInt(mockMembershipCard.id),
         expect.objectContaining({
           status: 'IN_USE',
           userId: mockUserResponse.id,
-        }),
-      );
-      expect(membershipCardsRepository.update).toHaveBeenCalledWith(
-        mockMembershipCard.id,
-        expect.objectContaining({
           assignedAt: expect.any(String),
         }),
+        undefined,
       );
       expect(jwtService.sign).toHaveBeenCalledWith({
         sub: String(mockUserResponse.id),
@@ -426,12 +422,13 @@ describe('AuthService', () => {
       await service.register(registerDto);
 
       expect(membershipCardsRepository.update).toHaveBeenCalledWith(
-        mockMembershipCard.id,
+        BigInt(mockMembershipCard.id),
         expect.objectContaining({
           status: 'IN_USE',
           userId: mockUserResponse.id,
           assignedAt: expect.any(String),
         }),
+        undefined,
       );
     });
 

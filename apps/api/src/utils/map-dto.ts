@@ -4,7 +4,8 @@ import { UnprocessableEntityException } from '@nestjs/common';
 
 export function mapDto<T extends object, R extends T>(
   DtoClass: ClassConstructor<T>,
-  plain: R & Record<string, any>, // R must extend T, but can have extra props
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  plain: R & Record<string, any>,
 ): T {
   const dto = plainToInstance(DtoClass, plain, {
     enableImplicitConversion: true,

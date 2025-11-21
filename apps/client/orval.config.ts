@@ -29,13 +29,5 @@ export default defineConfig({
       // Generate TypeScript types
       prettier: true,
     },
-    // Generate hooks for all tags
-    hooks: {
-      afterAllFilesWrite: [
-        // Fix Orval bug: replace query mutation with object spread (React immutability rule)
-        'node scripts/fix-orval-mutation.js',
-        'prettier --write',
-      ],
-    },
   },
 });

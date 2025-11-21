@@ -33,13 +33,10 @@ else
     echo ""
 fi
 
-# Database connection settings (with defaults)
-POSTGRES_CONTAINER_NAME=${POSTGRES_CONTAINER_NAME:-library-platform-db}
-
 # Start Docker Compose
 cd "$INFRA_DIR"
 echo "Starting PostgreSQL container..."
-docker-compose up -d
+docker-compose up -d postgres
 
 echo ""
 echo "Waiting for database to be ready..."
@@ -47,7 +44,7 @@ sleep 3
 
 # Wait for health check
 for i in {1..30}; do
-    if docker exec "${POSTGRES_CONTAINER_NAME}" pg_isready -U ${POSTGRES_USER:-abdelmounaim} > /dev/null 2>&1; then
+    if docker exec library-platform-db pg_isready -U ${POSTGRES_USER} > /dev/null 2>&1; then
         echo ""
         echo -e "${GREEN}✓ Database is ready!${NC}"
         break
@@ -67,16 +64,14 @@ echo "========================================"
 echo -e "${BLUE}Connection Information:${NC}"
 echo "========================================"
 echo "  Host:     localhost"
-echo "  Port:     ${POSTGRES_PORT:-5432}"
-echo "  Database: ${POSTGRES_DB:-library_db}"
-echo "  User:     ${POSTGRES_USER:-abdelmounaim}"
+echo "  Port:     ${POSTGRES_PORT}"
+echo "  Database: ${POSTGRES_DB}"
+echo "  User:     ${POSTGRES_USER}"
 echo ""
 echo "Connect with:"
-echo "  ${BLUE}psql -h localhost -p ${POSTGRES_PORT:-5432} -U ${POSTGRES_USER:-abdelmounaim} -d ${POSTGRES_DB:-library_db}${NC}"
+echo "  ${BLUE}psql -h localhost -p ${POSTGRES_PORT} -U ${POSTGRES_USER:-abdelmounaim} -d ${POSTGRES_DB}${NC}"
 echo ""
 echo "View logs:"
 echo "  ${BLUE}npm run db:logs${NC}"
 echo ""
-echo "Run tests:"
-echo "  ${BLUE}npm run db:test${NC}"
 echo "========================================"

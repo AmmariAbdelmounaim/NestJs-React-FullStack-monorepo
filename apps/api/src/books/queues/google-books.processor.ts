@@ -62,13 +62,13 @@ export class GoogleBooksProcessor extends WorkerHost {
 
     let googleBook = null;
     if (data.isbn13) {
-      googleBook = await this.googleBooksService.searchByIsbn13(data.isbn13);
+      googleBook = await this.googleBooksService.searchByIsbn(data.isbn13);
     } else if (data.isbn10) {
-      googleBook = await this.googleBooksService.searchByIsbn10(data.isbn10);
+      googleBook = await this.googleBooksService.searchByIsbn(data.isbn10);
     } else if (book.isbn13) {
-      googleBook = await this.googleBooksService.searchByIsbn13(book.isbn13);
+      googleBook = await this.googleBooksService.searchByIsbn(book.isbn13);
     } else if (book.isbn10) {
-      googleBook = await this.googleBooksService.searchByIsbn10(book.isbn10);
+      googleBook = await this.googleBooksService.searchByIsbn(book.isbn10);
     }
 
     if (!googleBook) {
@@ -121,9 +121,9 @@ export class GoogleBooksProcessor extends WorkerHost {
 
     let googleBook = null;
     if (isIsbn13) {
-      googleBook = await this.googleBooksService.searchByIsbn13(cleanIsbn);
+      googleBook = await this.googleBooksService.searchByIsbn(cleanIsbn);
     } else {
-      googleBook = await this.googleBooksService.searchByIsbn10(cleanIsbn);
+      googleBook = await this.googleBooksService.searchByIsbn(cleanIsbn);
     }
 
     if (!googleBook) {

@@ -24,14 +24,23 @@ export class MembershipCardsService {
 
   @WithErrorHandling('MembershipCardsService', 'assignToUser')
   async assignToUser(
-    cardId: number | bigint,
-    userId: number | bigint,
+    cardId: number,
+    userId: number,
+    currentUser?: { id: number; role: string },
   ): Promise<MembershipCardBaseDto | undefined> {
-    const updatedCard = await this.membershipCardsRepository.update(cardId, {
-      status: 'IN_USE',
-      userId: typeof userId === 'number' ? userId : Number(userId),
-      assignedAt: new Date().toISOString(),
-    });
+    const rlsContext = currentUser
+      ? { userId: currentUser.id.toString(), userRole: currentUser.role }
+      : undefined;
+
+    const updatedCard = await this.membershipCardsRepository.update(
+      BigInt(cardId),
+      {
+        status: 'IN_USE',
+        userId,
+        assignedAt: new Date().toISOString(),
+      },
+      rlsContext,
+    );
 
     if (updatedCard) {
       return mapDto(MembershipCardBaseDto, {

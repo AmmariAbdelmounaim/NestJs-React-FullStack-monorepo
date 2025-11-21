@@ -15,12 +15,21 @@ export class AuthorsService {
   constructor(private readonly authorsRepository: AuthorsRepository) {}
 
   @WithErrorHandling('AuthorsService', 'create')
-  async create(createAuthorDto: CreateAuthorDto): Promise<AuthorResponseDto> {
-    // Create author
-    const newAuthor = await this.authorsRepository.create(createAuthorDto);
+  async create(
+    createAuthorDto: CreateAuthorDto,
+    currentUser?: { id: number; role: string },
+  ): Promise<AuthorResponseDto> {
+    const rlsContext = currentUser
+      ? { userId: currentUser.id.toString(), userRole: currentUser.role }
+      : undefined;
+
+    const newAuthor = await this.authorsRepository.create(
+      createAuthorDto,
+      rlsContext,
+    );
     return mapDto(AuthorResponseDto, {
       ...newAuthor,
-      id: Number(newAuthor.id), // Convert BigInt to number
+      id: Number(newAuthor.id),
     });
   }
 
@@ -30,14 +39,14 @@ export class AuthorsService {
     return authors.map((author) =>
       mapDto(AuthorResponseDto, {
         ...author,
-        id: Number(author.id), // Convert BigInt to number
+        id: Number(author.id),
       }),
     );
   }
 
   @WithErrorHandling('AuthorsService', 'findOne')
   async findOne(id: number): Promise<AuthorResponseDto> {
-    const author = await this.authorsRepository.findById(id);
+    const author = await this.authorsRepository.findById(BigInt(id));
 
     if (!author) {
       throw new NotFoundException(`Author with the id ${id} is not found`);
@@ -45,7 +54,7 @@ export class AuthorsService {
 
     return mapDto(AuthorResponseDto, {
       ...author,
-      id: Number(author.id), // Convert BigInt to number
+      id: Number(author.id),
     });
   }
 
@@ -55,15 +64,14 @@ export class AuthorsService {
     return authors.map((author) =>
       mapDto(AuthorResponseDto, {
         ...author,
-        id: Number(author.id), // Convert BigInt to number
+        id: Number(author.id),
       }),
     );
   }
 
   @WithErrorHandling('AuthorsService', 'findBooksByAuthorId')
   async findBooksByAuthorId(authorId: number): Promise<AuthorWithBooksDto> {
-    // Check if author exists
-    const author = await this.authorsRepository.findById(authorId);
+    const author = await this.authorsRepository.findById(BigInt(authorId));
 
     if (!author) {
       throw new NotFoundException(
@@ -71,17 +79,16 @@ export class AuthorsService {
       );
     }
 
-    // Get books written by this author
     const books = await this.authorsRepository.findBooksByAuthorId(authorId);
+
     const authorResponse = mapDto(AuthorResponseDto, {
       ...author,
-      id: Number(author.id), // Convert BigInt to number
+      id: Number(author.id),
     });
 
-    // Convert books to plain objects (not DTOs yet) so @Type() can transform them
     const booksPlain = books.map((book) => ({
       ...book,
-      id: Number(book.id), // Convert BigInt to number
+      id: Number(book.id),
     }));
 
     const authorWithBooks = mapDto(AuthorWithBooksDto, {
@@ -95,15 +102,14 @@ export class AuthorsService {
   async update(
     id: number,
     updateAuthorDto: UpdateAuthorDto,
+    currentUser?: { id: number; role: string },
   ): Promise<AuthorResponseDto> {
-    // Check if author exists
-    const existingAuthor = await this.authorsRepository.findById(id);
+    const existingAuthor = await this.authorsRepository.findById(BigInt(id));
 
     if (!existingAuthor) {
       throw new NotFoundException(`Author with the id ${id} is not found`);
     }
 
-    // Prepare update data
     const updateData: Partial<AuthorInsert> = {};
 
     if (updateAuthorDto.firstName !== undefined)
@@ -115,8 +121,16 @@ export class AuthorsService {
     if (updateAuthorDto.deathDate !== undefined)
       updateData.deathDate = updateAuthorDto.deathDate;
 
+    const rlsContext = currentUser
+      ? { userId: currentUser.id.toString(), userRole: currentUser.role }
+      : undefined;
+
     // Update author
-    const updatedAuthor = await this.authorsRepository.update(id, updateData);
+    const updatedAuthor = await this.authorsRepository.update(
+      BigInt(id),
+      updateData,
+      rlsContext,
+    );
 
     if (!updatedAuthor) {
       throw new NotFoundException(`Author with the id ${id} is not found`);
@@ -124,16 +138,22 @@ export class AuthorsService {
 
     return mapDto(AuthorResponseDto, {
       ...updatedAuthor,
-      id: Number(updatedAuthor.id), // Convert BigInt to number
+      id: Number(updatedAuthor.id),
     });
   }
 
   @WithErrorHandling('AuthorsService', 'remove')
-  async remove(id: number): Promise<void> {
-    // Check if author exists (findOne already throws NotFoundException if not found)
+  async remove(
+    id: number,
+    currentUser?: { id: number; role: string },
+  ): Promise<void> {
     await this.findOne(id);
 
-    const deleted = await this.authorsRepository.delete(id);
+    const rlsContext = currentUser
+      ? { userId: currentUser.id.toString(), userRole: currentUser.role }
+      : undefined;
+
+    const deleted = await this.authorsRepository.delete(BigInt(id), rlsContext);
     if (!deleted) {
       throw new NotFoundException(`Author with the id ${id} is not found`);
     }

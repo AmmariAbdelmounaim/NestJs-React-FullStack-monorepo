@@ -20,6 +20,8 @@ CREATE INDEX idx_authors_last_name ON authors(last_name);
 -- Books indexes
 CREATE UNIQUE INDEX uniq_books_isbn_13
     ON books (isbn_13) WHERE isbn_13 IS NOT NULL;
+CREATE UNIQUE INDEX uniq_books_isbn_10
+    ON books (isbn_10) WHERE isbn_10 IS NOT NULL;
 
 CREATE INDEX idx_books_genre ON books(genre);
 CREATE INDEX idx_books_title ON books(title);

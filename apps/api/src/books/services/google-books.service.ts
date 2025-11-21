@@ -19,11 +19,11 @@ export class GoogleBooksService {
     });
   }
 
-  @WithErrorHandling('GoogleBooksService', 'searchByIsbn13')
-  async searchByIsbn13(isbn13: string): Promise<books_v1.Schema$Volume | null> {
+  @WithErrorHandling('GoogleBooksService', 'searchByIsbn')
+  async searchByIsbn(isbn: string): Promise<books_v1.Schema$Volume | null> {
     try {
       // Remove any hyphens from ISBN
-      const cleanIsbn = isbn13.replace(/-/g, '');
+      const cleanIsbn = isbn.replace(/-/g, '');
       const query = `isbn:${cleanIsbn}`;
 
       const response = await this.books.volumes.list({
@@ -37,33 +37,7 @@ export class GoogleBooksService {
       return null;
     } catch (error) {
       throw new InternalServerErrorException(
-        `Failed to search Google Books by ISBN-13 ${isbn13}: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  }
-
-  @WithErrorHandling('GoogleBooksService', 'searchByIsbn10')
-  async searchByIsbn10(isbn10: string): Promise<books_v1.Schema$Volume | null> {
-    try {
-      // Remove any hyphens from ISBN
-      const cleanIsbn = isbn10.replace(/-/g, '');
-      const query = `isbn:${cleanIsbn}`;
-
-      // Artificial delay of 10 seconds
-      await new Promise((resolve) => setTimeout(resolve, 10000));
-
-      const response = await this.books.volumes.list({
-        q: query,
-        maxResults: 1,
-      });
-
-      if (response.data.items && response.data.items.length > 0) {
-        return response.data.items[0];
-      }
-      return null;
-    } catch (error) {
-      throw new InternalServerErrorException(
-        `Failed to search Google Books by ISBN-10 ${isbn10}: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to search Google Books by ISBN ${isbn}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -80,12 +54,9 @@ export class GoogleBooksService {
         query += `+inauthor:${encodeURIComponent(author)}`;
       }
 
-      // Artificial delay of 10 seconds
-      await new Promise((resolve) => setTimeout(resolve, 10000));
-
       const response = await this.books.volumes.list({
         q: query,
-        maxResults: Math.min(maxResults, 40), // API max is 40
+        maxResults: Math.min(maxResults, 40),
       });
 
       return response.data.items || [];
@@ -102,12 +73,9 @@ export class GoogleBooksService {
     maxResults = 10,
   ): Promise<books_v1.Schema$Volume[]> {
     try {
-      // Artificial delay of 10 seconds
-      await new Promise((resolve) => setTimeout(resolve, 10000));
-
       const response = await this.books.volumes.list({
         q: query,
-        maxResults: Math.min(maxResults, 40), // API max is 40
+        maxResults: Math.min(maxResults, 40),
       });
 
       return response.data.items || [];

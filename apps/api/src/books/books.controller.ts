@@ -39,6 +39,8 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { UserResponseDto } from '../users/users.dto';
+import { Request } from '@nestjs/common';
 import type { books_v1 } from 'googleapis';
 
 @ApiTags('books')
@@ -71,8 +73,11 @@ export class BooksController {
   @ApiConflictResponse({
     description: 'Book with this ISBN-13 already exists',
   })
-  create(@Body() createBookDto: CreateBookDto): Promise<BookResponseDto> {
-    return this.booksService.create(createBookDto);
+  create(
+    @Body() createBookDto: CreateBookDto,
+    @Request() req: Request & { user: UserResponseDto },
+  ): Promise<BookResponseDto> {
+    return this.booksService.create(createBookDto, req.user);
   }
 
   @Get()
@@ -313,8 +318,9 @@ export class BooksController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateBookDto: UpdateBookDto,
+    @Request() req: Request & { user: UserResponseDto },
   ): Promise<BookResponseDto> {
-    return this.booksService.update(id, updateBookDto);
+    return this.booksService.update(id, updateBookDto, req.user);
   }
 
   @Delete(':id')
@@ -346,7 +352,10 @@ export class BooksController {
   @ApiNotFoundResponse({
     description: 'Book not found',
   })
-  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.booksService.remove(id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: Request & { user: UserResponseDto },
+  ): Promise<void> {
+    return this.booksService.remove(id, req.user);
   }
 }

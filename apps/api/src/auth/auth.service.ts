@@ -34,7 +34,6 @@ export class AuthService {
     }
 
     // Generate JWT token
-    // Convert bigint to string for JWT payload (JSON doesn't support bigint)
     const payload: JwtPayload = {
       sub: String(user.id),
       email: user.email,
@@ -65,14 +64,18 @@ export class AuthService {
         'No free membership cards available',
       );
     }
-    // Create user
+
     const user = await this.usersService.create(registerDto);
-    // Mark membership card as in use and give it the id user id etc
-    await this.membershipCardsRepository.update(freeMembershipCard.id, {
-      status: 'IN_USE',
-      userId: Number(user.id),
-      assignedAt: new Date().toISOString(),
-    });
+
+    await this.membershipCardsRepository.update(
+      BigInt(freeMembershipCard.id),
+      {
+        status: 'IN_USE',
+        userId: Number(user.id),
+        assignedAt: new Date().toISOString(),
+      },
+      undefined,
+    );
 
     const payload: JwtPayload = {
       sub: String(user.id),

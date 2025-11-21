@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createDatabase } from './index';
+import { TransactionService } from './transaction.service';
 
 @Global()
 @Module({
@@ -12,7 +13,8 @@ import { createDatabase } from './index';
       },
       inject: [ConfigService],
     },
+    TransactionService,
   ],
-  exports: ['DB'],
+  exports: ['DB', TransactionService],
 })
 export class DatabaseModule {}

@@ -29,12 +29,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { SelfOrAdminGuard } from '../auth/guards/self-or-admin.guard';
-import { mapDto } from '../utils/map-dto';
-import { UserRow } from '../db';
-
-interface AuthenticatedRequest extends Request {
-  user: UserRow;
-}
 
 @ApiTags('users')
 @Controller('users')
@@ -53,13 +47,10 @@ export class UsersController {
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  getCurrentUser(@Request() req: AuthenticatedRequest): UserResponseDto {
-    // The user is attached to the request by the JWT strategy
-    // Transform the raw UserRow to UserResponseDto, converting BigInt to number
-    return mapDto(UserResponseDto, {
-      ...req.user,
-      id: Number(req.user.id), // Convert BigInt to number
-    });
+  getCurrentUser(
+    @Request() req: Request & { user: UserResponseDto },
+  ): UserResponseDto {
+    return req.user;
   }
 
   @Get(':id')
@@ -91,8 +82,11 @@ export class UsersController {
   @ApiNotFoundResponse({
     description: 'User not found',
   })
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<UserResponseDto> {
-    return this.usersService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: Request & { user: UserResponseDto },
+  ): Promise<UserResponseDto> {
+    return this.usersService.findOne(id, req.user);
   }
 
   @Patch(':id')
@@ -133,8 +127,9 @@ export class UsersController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
+    @Request() req: Request & { user: UserResponseDto },
   ): Promise<UserResponseDto> {
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.update(id, updateUserDto, req.user);
   }
 
   @Delete(':id')
@@ -166,7 +161,10 @@ export class UsersController {
   @ApiNotFoundResponse({
     description: 'User not found',
   })
-  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.usersService.remove(id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: Request & { user: UserResponseDto },
+  ): Promise<void> {
+    return this.usersService.remove(id, req.user);
   }
 }

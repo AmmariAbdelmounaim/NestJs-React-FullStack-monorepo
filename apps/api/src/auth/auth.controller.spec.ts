@@ -93,7 +93,6 @@ describe('AuthController', () => {
         password: 'password123',
       } as RegisterDto;
 
-      // Note: In a real scenario, ValidationPipe would catch this before reaching the controller
       // But we can test that the service would handle it if it somehow got through
       service.register.mockRejectedValue(
         new BadRequestException('email should be an email'),

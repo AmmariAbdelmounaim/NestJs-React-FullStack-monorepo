@@ -26,6 +26,7 @@ export class AuthorBaseDto {
   @ApiProperty({
     description: 'Author first name',
     example: 'Harper',
+    type: String,
     maxLength: 100,
     required: false,
   })
@@ -38,6 +39,7 @@ export class AuthorBaseDto {
   @ApiProperty({
     description: 'Author last name',
     example: 'Lee',
+    type: String,
     minLength: 1,
     maxLength: 100,
   })

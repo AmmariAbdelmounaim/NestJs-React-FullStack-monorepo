@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -33,6 +34,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { UserResponseDto } from '../users/users.dto';
 
 @ApiTags('authors')
 @Controller('authors')
@@ -61,8 +63,11 @@ export class AuthorsController {
   @ApiBadRequestResponse({
     description: 'Invalid input data',
   })
-  create(@Body() createAuthorDto: CreateAuthorDto): Promise<AuthorResponseDto> {
-    return this.authorsService.create(createAuthorDto);
+  create(
+    @Body() createAuthorDto: CreateAuthorDto,
+    @Request() req: Request & { user: UserResponseDto },
+  ): Promise<AuthorResponseDto> {
+    return this.authorsService.create(createAuthorDto, req.user);
   }
 
   @Get()
@@ -215,8 +220,9 @@ export class AuthorsController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAuthorDto: UpdateAuthorDto,
+    @Request() req: Request & { user: UserResponseDto },
   ): Promise<AuthorResponseDto> {
-    return this.authorsService.update(id, updateAuthorDto);
+    return this.authorsService.update(id, updateAuthorDto, req.user);
   }
 
   @Delete(':id')
@@ -248,7 +254,10 @@ export class AuthorsController {
   @ApiNotFoundResponse({
     description: 'Author not found',
   })
-  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.authorsService.remove(id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: Request & { user: UserResponseDto },
+  ): Promise<void> {
+    return this.authorsService.remove(id, req.user);
   }
 }

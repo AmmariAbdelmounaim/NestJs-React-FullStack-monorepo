@@ -10,14 +10,7 @@ import {
 import { BookResponseDto } from '../books/books.dto';
 import { UserResponseDto } from '../users/users.dto';
 
-// Loan status enum matching the database enum
-export enum LoanStatus {
-  ONGOING = 'ONGOING',
-  RETURNED = 'RETURNED',
-  LATE = 'LATE',
-}
-
-// Base class for all loan DTOs
+import { LoanRow } from '../db';
 export class LoanBaseDto {
   @Expose()
   @ApiProperty({
@@ -34,7 +27,7 @@ export class LoanBaseDto {
   })
   @IsInt()
   @IsNotEmpty()
-  userId: number;
+  userId: LoanRow['userId'];
 
   @Expose()
   @ApiProperty({
@@ -43,16 +36,17 @@ export class LoanBaseDto {
   })
   @IsInt()
   @IsNotEmpty()
-  bookId: number;
+  bookId: LoanRow['bookId'];
 
   @Expose()
   @ApiProperty({
     description: 'Loan status',
-    enum: LoanStatus,
-    example: LoanStatus.ONGOING,
+    enum: ['ONGOING', 'RETURNED', 'LATE'],
+    example: 'ONGOING',
+    type: String,
   })
-  @IsEnum(LoanStatus)
-  status: LoanStatus;
+  @IsEnum(['ONGOING', 'RETURNED', 'LATE'])
+  status: LoanRow['status'];
 
   @Expose()
   @ApiProperty({
@@ -62,7 +56,7 @@ export class LoanBaseDto {
     example: '2024-01-01T00:00:00.000Z',
   })
   @IsDateString()
-  borrowedAt: string;
+  borrowedAt: LoanRow['borrowedAt'];
 
   @Expose()
   @ApiProperty({
@@ -74,7 +68,7 @@ export class LoanBaseDto {
   })
   @IsOptional()
   @IsDateString()
-  dueAt?: string;
+  dueAt?: LoanRow['dueAt'];
 
   @Expose()
   @ApiProperty({
@@ -86,7 +80,7 @@ export class LoanBaseDto {
   })
   @IsOptional()
   @IsDateString()
-  returnedAt?: string;
+  returnedAt?: LoanRow['returnedAt'];
 
   @Expose()
   @ApiProperty({
@@ -95,7 +89,7 @@ export class LoanBaseDto {
     format: 'date-time',
     example: '2024-01-01T00:00:00.000Z',
   })
-  createdAt: string;
+  createdAt: LoanRow['createdAt'];
 
   @Expose()
   @ApiProperty({
@@ -104,7 +98,7 @@ export class LoanBaseDto {
     format: 'date-time',
     example: '2024-01-01T00:00:00.000Z',
   })
-  updatedAt: string;
+  updatedAt: LoanRow['updatedAt'];
 }
 
 export class LoanResponseDto extends LoanBaseDto {}
@@ -136,7 +130,7 @@ export class CreateLoanDto {
   })
   @IsInt()
   @IsNotEmpty()
-  bookId: number;
+  bookId: LoanRow['bookId'];
 
   @ApiProperty({
     description:
@@ -148,7 +142,7 @@ export class CreateLoanDto {
   })
   @IsOptional()
   @IsDateString()
-  dueAt?: string;
+  dueAt?: LoanRow['dueAt'];
 }
 
 export class ReturnLoanDto {
@@ -158,5 +152,5 @@ export class ReturnLoanDto {
   })
   @IsInt()
   @IsNotEmpty()
-  loanId: number;
+  loanId: LoanRow['id'];
 }

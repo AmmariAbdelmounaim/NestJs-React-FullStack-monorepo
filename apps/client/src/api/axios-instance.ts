@@ -2,8 +2,6 @@ import axios, { AxiosError } from 'axios';
 
 import { getAuthToken } from '@/features/auth/lib/auth-storage';
 
-// Create a custom axios instance with default configuration
-// Matches Orval's expected signature: (url: string, options?: RequestInit) => Promise<T>
 export const customInstance = <T>(
   config: string,
   options?: RequestInit,
@@ -30,16 +28,8 @@ export const customInstance = <T>(
     data: options?.body,
   };
 
-  // Use VITE_API_URL if set, otherwise default to localhost for development
-  // Note: Orval generates paths that already include '/api' prefix
-  // So baseURL should be empty string (root) for same-origin, or full URL for different origin
-  const apiUrl = import.meta.env.VITE_API_URL;
   const baseURL =
-    apiUrl && apiUrl !== ''
-      ? apiUrl
-      : import.meta.env.DEV
-        ? 'http://localhost:3000'
-        : ''; // Empty string for same-origin (Orval paths already include '/api')
+    import.meta.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '';
 
   const promise = axios({
     ...axiosConfig,

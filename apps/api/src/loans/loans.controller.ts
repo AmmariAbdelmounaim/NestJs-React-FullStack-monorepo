@@ -30,20 +30,12 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ForbiddenException } from '@nestjs/common';
-import { LoansRepository } from './loans.repository';
-import { UserRow } from '../db';
-
-interface AuthenticatedRequest extends Request {
-  user: UserRow;
-}
+import { UserResponseDto } from '../users/users.dto';
 
 @ApiTags('loans')
 @Controller('loans')
 export class LoansController {
-  constructor(
-    private readonly loansService: LoansService,
-    private readonly loansRepository: LoansRepository,
-  ) {}
+  constructor(private readonly loansService: LoansService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -72,11 +64,9 @@ export class LoansController {
   })
   create(
     @Body() createLoanDto: CreateLoanDto,
-    @Request() req: AuthenticatedRequest,
+    @Request() req: Request & { user: UserResponseDto },
   ): Promise<LoanResponseDto> {
-    // Users can only create loans for themselves
-    const userId = Number(req.user.id);
-    return this.loansService.create(createLoanDto, userId);
+    return this.loansService.create(createLoanDto, req.user.id, req.user);
   }
 
   @Post(':id/return')
@@ -114,13 +104,9 @@ export class LoansController {
   })
   async returnLoan(
     @Param('id', ParseIntPipe) loanId: number,
-    @Request() req: AuthenticatedRequest,
+    @Request() req: Request & { user: UserResponseDto },
   ): Promise<LoanResponseDto> {
-    const loan = await this.loansRepository.findById(loanId);
-    if (loan && Number(req.user.id) !== Number(loan.userId)) {
-      throw new ForbiddenException('You can only return your own loans');
-    }
-    return this.loansService.returnLoan(loanId);
+    return this.loansService.returnLoan(loanId, req.user.id, req.user);
   }
 
   @Get('my')
@@ -144,9 +130,9 @@ export class LoansController {
     description: 'Forbidden - USER role required',
   })
   findMyOngoingLoans(
-    @Request() req: AuthenticatedRequest,
+    @Request() req: Request & { user: UserResponseDto },
   ): Promise<LoanResponseDto[]> {
-    return this.loansService.findOngoing(Number(req.user.id));
+    return this.loansService.findOngoing(Number(req.user.id), req.user);
   }
 
   @Get()
@@ -169,8 +155,10 @@ export class LoansController {
   @ApiForbiddenResponse({
     description: 'Forbidden - Admin role required',
   })
-  findAllOngoing(): Promise<LoanResponseDto[]> {
-    return this.loansService.findOngoing();
+  findAllOngoing(
+    @Request() req: Request & { user: UserResponseDto },
+  ): Promise<LoanResponseDto[]> {
+    return this.loansService.findOngoing(undefined, req.user);
   }
 
   @Get('search')
@@ -211,14 +199,15 @@ export class LoansController {
     description: 'Either userId or bookId query parameter is required',
   })
   searchLoans(
+    @Request() req: Request & { user: UserResponseDto },
     @Query('userId', new ParseIntPipe({ optional: true })) userId?: number,
     @Query('bookId', new ParseIntPipe({ optional: true })) bookId?: number,
   ): Promise<LoanResponseDto[]> {
     if (userId) {
-      return this.loansService.findByUserId(userId);
+      return this.loansService.findByUserId(userId, req.user);
     }
     if (bookId) {
-      return this.loansService.findByBookId(bookId);
+      return this.loansService.findByBookId(bookId, req.user);
     }
     throw new ForbiddenException(
       'Either userId or bookId query parameter is required',

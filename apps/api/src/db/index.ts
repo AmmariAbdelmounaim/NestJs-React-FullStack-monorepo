@@ -3,33 +3,19 @@ import postgres from 'postgres';
 import { ConfigService } from '@nestjs/config';
 import * as schema from './migrations/schema';
 
-// Factory function to create database connection
 export function createDatabase(configService: ConfigService) {
-  // Get connection string from environment using ConfigService
-  // Support both DATABASE_URL and individual POSTGRES_* variables
-  // Using superuser to bypass RLS (Row Level Security) for simplicity
-  const databaseUrl = configService.get<string>('DATABASE_URL');
-
-  // Use superuser credentials (bypasses RLS)
+  // Use DB_APP_ROLE for RLS, fallback to POSTGRES_USER
   const dbUser =
-    configService.get<string>('POSTGRES_USER') ||
-    configService.get<string>('DB_USER');
+    configService.get<string>('DB_APP_ROLE') ||
+    configService.get<string>('POSTGRES_USER');
   const dbPassword =
-    configService.get<string>('POSTGRES_PASSWORD') ||
-    configService.get<string>('DB_PASSWORD');
-  const dbHost =
-    configService.get<string>('POSTGRES_HOST') ||
-    configService.get<string>('DB_HOST');
-  const dbPort =
-    configService.get<string>('POSTGRES_PORT') ||
-    configService.get<string>('DB_PORT');
-  const dbName =
-    configService.get<string>('POSTGRES_DB') ||
-    configService.get<string>('DB_NAME');
+    configService.get<string>('DB_APP_PASSWORD') ||
+    configService.get<string>('POSTGRES_PASSWORD');
+  const dbHost = configService.get<string>('POSTGRES_HOST');
+  const dbPort = configService.get<string>('POSTGRES_PORT');
+  const dbName = configService.get<string>('POSTGRES_DB');
 
-  const connectionString =
-    databaseUrl ||
-    `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
+  const connectionString = `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
 
   // Validate connection string
   if (
@@ -38,34 +24,39 @@ export function createDatabase(configService: ConfigService) {
     connectionString.includes('null')
   ) {
     throw new Error(
-      'Invalid database connection string. Please set DATABASE_URL or POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, and POSTGRES_DB environment variables.',
+      'Invalid database connection string. Please set POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, and POSTGRES_DB environment variables.',
     );
   }
 
-  // Create postgres client
+  // Create postgres client with connection pool
   const client = postgres(connectionString, {
     max: 10,
+    idle_timeout: 20,
+    max_lifetime: 60 * 30,
+    connect_timeout: 10,
+    prepare: false, // Keep this for session variables
   });
 
   // Create drizzle instance with schema
-  return drizzle(client, { schema });
+  const db = drizzle(client, { schema });
+
+  return db;
 }
 
-// Export schema for use in queries
-export * from './migrations/schema';
-
 // Export inferred types for convenience
-import { UserRow } from './migrations/schema';
+export type BookRow = typeof schema.books.$inferSelect;
+export type BookInsert = typeof schema.books.$inferInsert;
 
-// Infer UserRole type from the schema
-export type UserRole = UserRow['role'];
+export type UserRow = typeof schema.users.$inferSelect;
+export type UserInsert = typeof schema.users.$inferInsert;
 
-// Export enum values as const array for runtime use (e.g., validation)
-// The enum values are defined in the schema: ['ADMIN', 'USER']
-export const USER_ROLES = [
-  'ADMIN',
-  'USER',
-] as const satisfies readonly UserRole[];
+export type MembershipCardRow = typeof schema.membershipCards.$inferSelect;
+export type MembershipCardInsert = typeof schema.membershipCards.$inferInsert;
 
-// Default role value (matches schema default)
-export const DEFAULT_USER_ROLE: UserRole = 'USER';
+export type AuthorRow = typeof schema.authors.$inferSelect;
+export type AuthorInsert = typeof schema.authors.$inferInsert;
+
+export type LoanRow = typeof schema.loans.$inferSelect;
+export type LoanInsert = typeof schema.loans.$inferInsert;
+
+export * from './migrations/schema';

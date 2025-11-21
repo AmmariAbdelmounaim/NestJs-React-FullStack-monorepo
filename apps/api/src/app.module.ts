@@ -1,10 +1,7 @@
-import { Module, Logger } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { resolve } from 'node:path';
-import { existsSync } from 'node:fs';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { DatabaseModule } from './db/db.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
@@ -14,31 +11,20 @@ import { BooksModule } from './books/books.module';
 import { AuthorsModule } from './authors/authors.module';
 import { LoansModule } from './loans/loans.module';
 
-const rootEnvPath = resolve(__dirname, '..', '..', '..', '.env');
-const envFilePath = existsSync(rootEnvPath) ? rootEnvPath : undefined;
-
-const configModuleOptions: {
-  isGlobal: boolean;
-  envFilePath?: string;
-} = {
-  isGlobal: true,
-};
-
-if (envFilePath) {
-  configModuleOptions.envFilePath = envFilePath;
-}
-
 @Module({
   imports: [
-    ConfigModule.forRoot(configModuleOptions),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: resolve(__dirname, '../../..', '.env'),
+    }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
         const redisHost = configService.get<string>('REDIS_HOST');
-        const redisPort = configService.get<number>('REDIS_PORT', 6379);
+        const redisPort = configService.get<number>('REDIS_PORT');
 
-        if (!redisHost) {
-          throw new Error('REDIS_HOST environment variable is not set');
+        if (!redisHost || !redisPort) {
+          throw new Error('REDIS environment variables are not set');
         }
 
         return {
@@ -58,14 +44,6 @@ if (envFilePath) {
     AuthorsModule,
     LoansModule,
   ],
-  controllers: [AppController],
-  providers: [
-    {
-      provide: Logger,
-      useFactory: () => new Logger(AppService.name),
-    },
-    AppService,
-    StartupService,
-  ],
+  providers: [StartupService],
 })
 export class AppModule {}

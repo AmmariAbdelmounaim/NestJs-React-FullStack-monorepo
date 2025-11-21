@@ -6,24 +6,25 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import { UserRole, UserRow } from '../../db';
+import { UserRow } from '../../db';
+import { UserResponseDto } from '../../users/users.dto';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
+    const requiredRoles = this.reflector.getAllAndOverride<UserRow['role'][]>(
       ROLES_KEY,
       [context.getHandler(), context.getClass()],
     );
 
     if (!requiredRoles) {
-      return true; // No roles required, allow access
+      return true;
     }
 
     const request = context.switchToHttp().getRequest();
-    const user: UserRow = request.user;
+    const user: UserResponseDto = request.user;
 
     if (!user) {
       throw new ForbiddenException('User not authenticated');

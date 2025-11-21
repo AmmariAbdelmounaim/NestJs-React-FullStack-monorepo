@@ -19,13 +19,10 @@ export class StartupService implements OnModuleInit {
   private async initializeAdmin() {
     const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
     const adminPassword = this.configService.get<string>('ADMIN_PASSWORD');
-    const adminFirstName =
-      this.configService.get<string>('ADMIN_FIRST_NAME') || 'Admin';
-    const adminLastName =
-      this.configService.get<string>('ADMIN_LAST_NAME') || 'User';
+    const adminFirstName = this.configService.get<string>('ADMIN_FIRST_NAME');
+    const adminLastName = this.configService.get<string>('ADMIN_LAST_NAME');
 
-    // Skip initialization if credentials are not provided
-    if (!adminEmail || !adminPassword) {
+    if (!adminEmail || !adminPassword || !adminFirstName || !adminLastName) {
       this.logger.warn(
         'Admin credentials not provided. Skipping admin initialization.',
       );
@@ -33,7 +30,6 @@ export class StartupService implements OnModuleInit {
     }
 
     try {
-      // Check if admin user already exists
       const existingAdmin = await this.usersRepository.findByEmail(adminEmail);
 
       if (existingAdmin) {
@@ -41,10 +37,8 @@ export class StartupService implements OnModuleInit {
         return;
       }
 
-      // Hash the admin password
       const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
-      // Create admin user
       await this.usersRepository.create({
         email: adminEmail,
         firstName: adminFirstName,
@@ -58,7 +52,6 @@ export class StartupService implements OnModuleInit {
       this.logger.error(
         `Failed to initialize admin user: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
-      // Don't throw - allow application to start even if admin initialization fails
     }
   }
 }

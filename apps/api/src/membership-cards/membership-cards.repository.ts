@@ -1,93 +1,119 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import {
   membershipCards,
-  createDatabase,
   MembershipCardRow,
   MembershipCardInsert,
 } from '../db';
-
-type Database = ReturnType<typeof createDatabase>;
+import { TransactionService } from '../db/transaction.service';
 
 @Injectable()
 export class MembershipCardsRepository {
-  constructor(@Inject('DB') private readonly db: Database) {}
+  constructor(private readonly transactionService: TransactionService) {}
 
-  async findById(id: number | bigint): Promise<MembershipCardRow | undefined> {
-    const idBigInt = typeof id === 'number' ? BigInt(id) : id;
-    const [card] = await this.db
-      .select()
-      .from(membershipCards)
-      .where(eq(membershipCards.id, idBigInt))
-      .limit(1);
-    return card;
+  async findById(
+    id: bigint,
+    rlsContext?: { userId?: string; userRole?: string },
+  ): Promise<MembershipCardRow | undefined> {
+    return await this.transactionService.withTransaction(async (tx) => {
+      const [card] = await tx
+        .select()
+        .from(membershipCards)
+        .where(eq(membershipCards.id, id))
+        .limit(1);
+      return card;
+    }, rlsContext);
   }
 
   async findBySerialNumber(
     serialNumber: string,
+    rlsContext?: { userId?: string; userRole?: string },
   ): Promise<MembershipCardRow | undefined> {
-    const [card] = await this.db
-      .select()
-      .from(membershipCards)
-      .where(eq(membershipCards.serialNumber, serialNumber))
-      .limit(1);
-    return card;
+    return await this.transactionService.withTransaction(async (tx) => {
+      const [card] = await tx
+        .select()
+        .from(membershipCards)
+        .where(eq(membershipCards.serialNumber, serialNumber))
+        .limit(1);
+      return card;
+    }, rlsContext);
   }
 
-  async existsBySerialNumber(serialNumber: string): Promise<boolean> {
-    const [card] = await this.db
-      .select({ id: membershipCards.id })
-      .from(membershipCards)
-      .where(eq(membershipCards.serialNumber, serialNumber))
-      .limit(1);
-    return !!card;
+  async existsBySerialNumber(
+    serialNumber: string,
+    rlsContext?: { userId?: string; userRole?: string },
+  ): Promise<boolean> {
+    return await this.transactionService.withTransaction(async (tx) => {
+      const [card] = await tx
+        .select({ id: membershipCards.id })
+        .from(membershipCards)
+        .where(eq(membershipCards.serialNumber, serialNumber))
+        .limit(1);
+      return !!card;
+    }, rlsContext);
   }
 
-  async create(data: MembershipCardInsert): Promise<MembershipCardRow> {
-    const [newCard] = await this.db
-      .insert(membershipCards)
-      .values({
-        serialNumber: data.serialNumber,
-        status: data.status || 'FREE',
-        userId: data.userId || null,
-        assignedAt: data.assignedAt || null,
-        archivedAt: data.archivedAt || null,
-      })
-      .returning();
-    return newCard;
+  async create(
+    data: MembershipCardInsert,
+    rlsContext?: { userId?: string; userRole?: string },
+  ): Promise<MembershipCardRow> {
+    return await this.transactionService.withTransaction(async (tx) => {
+      const [newCard] = await tx
+        .insert(membershipCards)
+        .values({
+          serialNumber: data.serialNumber,
+          status: data.status,
+          userId: data.userId,
+          assignedAt: data.assignedAt,
+          archivedAt: data.archivedAt,
+        })
+        .returning();
+      return newCard;
+    }, rlsContext);
   }
 
   async update(
-    id: number | bigint,
+    id: bigint,
     data: Partial<MembershipCardInsert>,
+    rlsContext?: { userId?: string; userRole?: string },
   ): Promise<MembershipCardRow | undefined> {
-    const idBigInt = typeof id === 'number' ? BigInt(id) : id;
-    const [updatedCard] = await this.db
-      .update(membershipCards)
-      .set({
-        ...data,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(membershipCards.id, idBigInt))
-      .returning();
-    return updatedCard;
+    return await this.transactionService.withTransaction(async (tx) => {
+      const [updatedCard] = await tx
+        .update(membershipCards)
+        .set({
+          ...data,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(membershipCards.id, id))
+        .returning();
+      return updatedCard;
+    }, rlsContext);
   }
 
-  async delete(id: number | bigint): Promise<boolean> {
-    const idBigInt = typeof id === 'number' ? BigInt(id) : id;
-    const result = await this.db
-      .delete(membershipCards)
-      .where(eq(membershipCards.id, idBigInt))
-      .returning();
-    return result.length > 0;
+  async delete(
+    id: bigint,
+    rlsContext?: { userId?: string; userRole?: string },
+  ): Promise<boolean> {
+    return await this.transactionService.withTransaction(async (tx) => {
+      const result = await tx
+        .delete(membershipCards)
+        .where(eq(membershipCards.id, id))
+        .returning();
+      return result.length > 0;
+    }, rlsContext);
   }
 
-  async findFirstFree(): Promise<MembershipCardRow | undefined> {
-    const [card] = await this.db
-      .select()
-      .from(membershipCards)
-      .where(eq(membershipCards.status, 'FREE'))
-      .limit(1);
-    return card;
+  async findFirstFree(rlsContext?: {
+    userId?: string;
+    userRole?: string;
+  }): Promise<MembershipCardRow | undefined> {
+    return await this.transactionService.withTransaction(async (tx) => {
+      const [card] = await tx
+        .select()
+        .from(membershipCards)
+        .where(eq(membershipCards.status, 'FREE'))
+        .limit(1);
+      return card;
+    }, rlsContext);
   }
 }

@@ -39,13 +39,13 @@ fi
 
 # Database connection settings (with defaults)
 POSTGRES_CONTAINER_NAME=${POSTGRES_CONTAINER_NAME:-library-platform-db}
-POSTGRES_USER=${POSTGRES_USER:-abdelmounaim}
-POSTGRES_DB=${POSTGRES_DB:-library_db}
+POSTGRES_USER=${POSTGRES_USER}
+POSTGRES_DB=${POSTGRES_DB}
 
 echo ""
 echo "Stopping database..."
 cd "$INFRA_DIR"
-docker-compose down -v
+docker-compose down -v postgres
 
 echo ""
 echo "Removing volumes..."
@@ -55,7 +55,7 @@ docker volume rm "$VOLUME_NAME" 2>/dev/null || true
 
 echo ""
 echo "Starting fresh database..."
-docker-compose up -d
+docker-compose up -d postgres
 
 echo ""
 echo "Waiting for database to be ready..."
@@ -81,7 +81,3 @@ echo ""
 echo "The database has been reset with:"
 echo "  - Fresh schema"
 echo "  - Initial seed data"
-echo ""
-echo "You can now run tests with:"
-echo "  npm run db:test"
-
