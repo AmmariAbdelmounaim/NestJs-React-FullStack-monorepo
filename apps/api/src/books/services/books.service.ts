@@ -4,6 +4,7 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, QueueEvents } from 'bullmq';
 import { mapDto } from '../../utils/map-dto';
@@ -37,10 +38,24 @@ export class BooksService {
     private readonly booksRepository: BooksRepository,
     private readonly googleBooksService: GoogleBooksService,
     private readonly authorsRepository: AuthorsRepository,
+    private readonly configService: ConfigService,
     @InjectQueue(GOOGLE_BOOKS_QUEUE_NAME)
     private readonly googleBooksQueue: Queue,
   ) {
-    this.queueEvents = new QueueEvents(GOOGLE_BOOKS_QUEUE_NAME);
+    // Create QueueEvents with the same Redis connection configuration
+    const redisHost = this.configService.get<string>('REDIS_HOST');
+    const redisPort = this.configService.get<number>('REDIS_PORT', 6379);
+
+    if (!redisHost) {
+      throw new Error('REDIS_HOST environment variable is not set');
+    }
+
+    this.queueEvents = new QueueEvents(GOOGLE_BOOKS_QUEUE_NAME, {
+      connection: {
+        host: redisHost,
+        port: redisPort,
+      },
+    });
   }
 
   @WithErrorHandling('BooksService', 'create')

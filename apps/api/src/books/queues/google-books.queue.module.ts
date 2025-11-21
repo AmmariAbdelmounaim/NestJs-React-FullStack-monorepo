@@ -11,16 +11,9 @@ import { GOOGLE_BOOKS_QUEUE_NAME } from './google-books.types';
 @Module({
   imports: [
     AuthorsModule,
-    BullModule.registerQueueAsync({
+    // Register queue - it will reuse the connection from BullModule.forRootAsync in app.module.ts
+    BullModule.registerQueue({
       name: GOOGLE_BOOKS_QUEUE_NAME,
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        connection: {
-          host: configService.get<string>('REDIS_HOST', 'localhost'),
-          port: configService.get<number>('REDIS_PORT', 6379),
-        },
-      }),
-      inject: [ConfigService],
     }),
   ],
   providers: [

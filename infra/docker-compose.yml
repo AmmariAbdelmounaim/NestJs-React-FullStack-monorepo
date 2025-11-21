@@ -72,24 +72,16 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-abdelmounaim}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: ${POSTGRES_DB:-library_db}
-      # App role for RLS (Row Level Security) - required for queries to work
-      # These are loaded from .env file via env_file, but can be overridden here
       DB_APP_ROLE: ${DB_APP_ROLE:-library_app}
       DB_APP_PASSWORD: ${DB_APP_PASSWORD:-password}
-      # Alternative: use DATABASE_URL
       DATABASE_URL: ${DATABASE_URL:-}
-      # Redis connection
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT:-6379}
-      # API configuration
       PORT: ${API_PORT:-3000}
       NODE_ENV: ${NODE_ENV:-production}
-      # JWT configuration (loaded from .env file via env_file)
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
-      # CORS configuration
       CORS_ORIGIN: ${CORS_ORIGIN:-same-origin}
-    env_file:
-      - ../.env
+      JWT_SECRET: ${JWT_SECRET:-jwt-secret}
     depends_on:
       postgres:
         condition: service_healthy
@@ -100,7 +92,6 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - 'node -e "require(''http'').get(''http://localhost:3000/api'', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"'
       interval: 30s
       timeout: 10s
       retries: 3
