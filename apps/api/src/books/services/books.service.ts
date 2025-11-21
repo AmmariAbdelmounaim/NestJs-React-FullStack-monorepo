@@ -2,7 +2,10 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue, QueueEvents } from 'bullmq';
 import { mapDto } from '../../utils/map-dto';
 import {
   CreateBookDto,
@@ -19,18 +22,29 @@ import { GoogleBooksService } from './google-books.service';
 import { AuthorsRepository } from '../../authors/authors.repository';
 import { WithErrorHandling } from '../../utils/with-error-handling.decorator';
 import { type books_v1 } from 'googleapis';
+import {
+  GOOGLE_BOOKS_QUEUE_NAME,
+  ENRICH_BOOK_JOB_NAME,
+  CREATE_BOOK_FROM_GOOGLE_JOB_NAME,
+} from '../queues/google-books.types';
 
 @Injectable()
 export class BooksService {
+  private readonly logger = new Logger(BooksService.name);
+  private readonly queueEvents: QueueEvents;
+
   constructor(
     private readonly booksRepository: BooksRepository,
     private readonly googleBooksService: GoogleBooksService,
     private readonly authorsRepository: AuthorsRepository,
-  ) {}
+    @InjectQueue(GOOGLE_BOOKS_QUEUE_NAME)
+    private readonly googleBooksQueue: Queue,
+  ) {
+    this.queueEvents = new QueueEvents(GOOGLE_BOOKS_QUEUE_NAME);
+  }
 
   @WithErrorHandling('BooksService', 'create')
   async create(createBookDto: CreateBookDto): Promise<BookResponseDto> {
-    // Check if book with ISBN-13 already exists
     if (createBookDto.isbn13) {
       const existingBook = await this.booksRepository.existsByIsbn13(
         createBookDto.isbn13,
@@ -41,11 +55,30 @@ export class BooksService {
       }
     }
 
-    // Create book
     const newBook = await this.booksRepository.create(createBookDto);
+    const bookId = Number(newBook.id);
+
+    if (createBookDto.isbn13 || createBookDto.isbn10) {
+      this.googleBooksQueue
+        .add(ENRICH_BOOK_JOB_NAME, {
+          bookId,
+          isbn13: createBookDto.isbn13 || undefined,
+          isbn10: createBookDto.isbn10 || undefined,
+        })
+        .catch((error) => {
+          this.logger.error(
+            `Failed to queue enrichment job for book ${bookId}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        });
+
+      this.logger.log(
+        `Queued enrichment job for book ${bookId} with ISBN-13: ${createBookDto.isbn13 || 'N/A'}, ISBN-10: ${createBookDto.isbn10 || 'N/A'}`,
+      );
+    }
+
     return mapDto(BookResponseDto, {
       ...newBook,
-      id: Number(newBook.id), // Convert BigInt to number
+      id: bookId,
     });
   }
 
@@ -55,7 +88,7 @@ export class BooksService {
     return books.map((book) =>
       mapDto(BookResponseDto, {
         ...book,
-        id: Number(book.id), // Convert BigInt to number
+        id: Number(book.id),
       }),
     );
   }
@@ -73,13 +106,13 @@ export class BooksService {
 
     const bookResponse = mapDto(BookResponseDto, {
       ...book,
-      id: Number(book.id), // Convert BigInt to number
+      id: Number(book.id),
     });
 
     // Convert authors to plain objects (not DTOs yet) so @Type() can transform them
     const authorsPlain = authors.map((author) => ({
       ...author,
-      id: Number(author.id), // Convert BigInt to number
+      id: Number(author.id),
     }));
 
     const bookWithAuthors = mapDto(BookWithAuthorsDto, {
@@ -145,7 +178,7 @@ export class BooksService {
 
     return mapDto(BookResponseDto, {
       ...updatedBook,
-      id: Number(updatedBook.id), // Convert BigInt to number
+      id: Number(updatedBook.id),
     });
   }
 
@@ -194,86 +227,52 @@ export class BooksService {
   @WithErrorHandling('BooksService', 'enrichFromGoogleBooks')
   async enrichFromGoogleBooks(id: number): Promise<BookResponseDto> {
     const book = await this.findOne(id);
-    // Try to find book in Google Books by ISBN-13 or ISBN-10
-    let googleBook = null;
-    if (book.isbn13) {
-      googleBook = await this.googleBooksService.searchByIsbn13(book.isbn13);
-    } else if (book.isbn10) {
-      googleBook = await this.googleBooksService.searchByIsbn10(book.isbn10);
-    }
 
-    if (!googleBook) {
+    // Validate that book has ISBN
+    if (!book.isbn13 && !book.isbn10) {
       throw new NotFoundException(
-        `Book not found in Google Books database. Ensure the book has a valid ISBN-13 or ISBN-10.`,
+        'Book must have a valid ISBN-13 or ISBN-10 to be enriched from Google Books.',
       );
     }
 
-    // Transform and update book
-    const enrichedData =
-      await this.googleBooksService.transformToBookData(googleBook);
+    await this.googleBooksQueue.add(ENRICH_BOOK_JOB_NAME, {
+      bookId: id,
+      isbn13: book.isbn13 || undefined,
+      isbn10: book.isbn10 || undefined,
+    });
 
-    // Merge with existing data (don't overwrite existing fields unless they're missing)
-    const updateData: UpdateBookDto = {};
+    this.logger.log(
+      `Queued enrichment job for book ${id} with ISBN-13: ${book.isbn13 || 'N/A'}, ISBN-10: ${book.isbn10 || 'N/A'}`,
+    );
 
-    if (!book.description && enrichedData.description) {
-      updateData.description = enrichedData.description;
-    }
-    if (!book.coverImageUrl && enrichedData.coverImageUrl) {
-      updateData.coverImageUrl = enrichedData.coverImageUrl;
-    }
-    if (!book.genre && enrichedData.genre) {
-      updateData.genre = enrichedData.genre;
-    }
-    if (!book.publicationDate && enrichedData.publicationDate) {
-      updateData.publicationDate = enrichedData.publicationDate;
-    }
-    if (!book.isbn10 && enrichedData.isbn10) {
-      updateData.isbn10 = enrichedData.isbn10;
-    }
-    if (!book.isbn13 && enrichedData.isbn13) {
-      updateData.isbn13 = enrichedData.isbn13;
-    }
-
-    // Always update external metadata
-    updateData.externalSource = enrichedData.externalSource;
-    updateData.externalId = enrichedData.externalId;
-    updateData.externalMetadata = enrichedData.externalMetadata;
-
-    return this.update(id, updateData);
+    // Return immediately (job will process in background)
+    return book;
   }
 
   @WithErrorHandling('BooksService', 'createFromGoogleBooks')
   async createFromGoogleBooks(isbn: string): Promise<BookResponseDto> {
-    // Determine if it's ISBN-10 or ISBN-13
-    const cleanIsbn = isbn.replace(/-/g, '');
-    const isIsbn13 = cleanIsbn.length === 13;
+    const job = await this.googleBooksQueue.add(
+      CREATE_BOOK_FROM_GOOGLE_JOB_NAME,
+      { isbn },
+    );
 
-    let googleBook = null;
-    if (isIsbn13) {
-      googleBook = await this.googleBooksService.searchByIsbn13(cleanIsbn);
-    } else {
-      googleBook = await this.googleBooksService.searchByIsbn10(cleanIsbn);
-    }
+    this.logger.log(`Queued create-from-google job for ISBN: ${isbn}`);
 
-    if (!googleBook) {
+    try {
+      const result = await job.waitUntilFinished(this.queueEvents, 60000);
+      return result as BookResponseDto;
+    } catch (error) {
+      // Re-throw with proper error handling
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
       throw new NotFoundException(
-        `Book with ISBN ${isbn} not found in Google Books`,
+        `Failed to create book from Google Books: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
-
-    // Transform to book data
-    const bookData =
-      await this.googleBooksService.transformToBookData(googleBook);
-    // Check if book already exists
-    if (bookData.isbn13) {
-      const exists = await this.booksRepository.existsByIsbn13(bookData.isbn13);
-      if (exists) {
-        throw new ConflictException('Book with this ISBN-13 already exists');
-      }
-    }
-
-    // Create the book
-    return this.create(bookData);
   }
 
   @WithErrorHandling('BooksService', 'searchGoogleBooks')

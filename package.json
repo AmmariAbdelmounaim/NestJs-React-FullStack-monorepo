@@ -100,6 +100,7 @@
   ],
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
+    "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "11.1.9",
     "@nestjs/config": "4.0.2",
     "@nestjs/core": "11.1.9",
@@ -114,6 +115,7 @@
     "@tanstack/react-router-devtools": "^1.136.17",
     "axios": "1.13.2",
     "bcrypt": "^6.0.0",
+    "bullmq": "^5.64.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "drizzle-orm": "^0.44.7",
@@ -125,6 +127,7 @@
     "postgres": "^3.4.7",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "redis": "^5.10.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
     "tslib": "2.8.1",

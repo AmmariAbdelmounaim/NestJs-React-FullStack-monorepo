@@ -49,6 +49,9 @@ export class GoogleBooksService {
       const cleanIsbn = isbn10.replace(/-/g, '');
       const query = `isbn:${cleanIsbn}`;
 
+      // Artificial delay of 10 seconds
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+
       const response = await this.books.volumes.list({
         q: query,
         maxResults: 1,
@@ -77,6 +80,9 @@ export class GoogleBooksService {
         query += `+inauthor:${encodeURIComponent(author)}`;
       }
 
+      // Artificial delay of 10 seconds
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+
       const response = await this.books.volumes.list({
         q: query,
         maxResults: Math.min(maxResults, 40), // API max is 40
@@ -96,6 +102,9 @@ export class GoogleBooksService {
     maxResults = 10,
   ): Promise<books_v1.Schema$Volume[]> {
     try {
+      // Artificial delay of 10 seconds
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+
       const response = await this.books.volumes.list({
         q: query,
         maxResults: Math.min(maxResults, 40), // API max is 40

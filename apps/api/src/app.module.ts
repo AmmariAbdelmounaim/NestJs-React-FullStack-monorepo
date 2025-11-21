@@ -1,5 +1,6 @@
 import { Module, Logger } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { BullModule } from '@nestjs/bullmq';
 import { resolve } from 'node:path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -19,6 +20,16 @@ const rootEnvPath = resolve(__dirname, '..', '..', '..', '.env');
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: rootEnvPath,
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('REDIS_HOST', 'localhost'),
+          port: configService.get<number>('REDIS_PORT', 6379),
+        },
+      }),
+      inject: [ConfigService],
     }),
     DatabaseModule,
     UsersModule,
