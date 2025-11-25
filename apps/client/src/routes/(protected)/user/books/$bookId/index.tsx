@@ -32,7 +32,7 @@ function RouteComponent() {
   } = useBooksControllerFindOne(numericBookId, {
     query: {
       enabled: isValidBookId,
-      queryKey: getBooksControllerFindOneQueryKey(),
+      queryKey: getBooksControllerFindOneQueryKey(Number(bookId)),
       select: (response) =>
         response.status === 200 ? response.data : undefined,
     },

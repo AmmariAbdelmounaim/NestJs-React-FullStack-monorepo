@@ -28,8 +28,7 @@ export const customInstance = <T>(
     data: options?.body,
   };
 
-  const baseURL =
-    import.meta.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '';
+  const baseURL = import.meta.env.DEV ? 'http://localhost:3000' : '';
 
   const promise = axios({
     ...axiosConfig,

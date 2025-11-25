@@ -34,7 +34,7 @@ function RouteComponent() {
   } = useAuthorsControllerFindOne(numericAuthorId, {
     query: {
       enabled: isValidAuthorId,
-      queryKey: getAuthorsControllerFindOneQueryKey(),
+      queryKey: getAuthorsControllerFindOneQueryKey(Number(authorId)),
       select: (response) =>
         response.status === 200 ? response.data : undefined,
     },
